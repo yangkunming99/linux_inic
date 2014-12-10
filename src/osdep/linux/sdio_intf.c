@@ -189,7 +189,7 @@ int sdio_alloc_irq(struct dvobj_priv *dvobj)
 {
 	PSDIO_DATA psdio_data;
 	struct sdio_func *func;
-	int err;
+	int err = 0;
 
 	psdio_data = &dvobj->intf_data;
 	func = psdio_data->func;
@@ -331,12 +331,12 @@ static int __devinit rtl8195a_init_one(struct sdio_func *func, const struct sdio
 	if((rtw_drv_register_netdev(padapter)) != _SUCCESS) {
 		goto free_adapter;
 	}	
-#if 0
+
 	if (sdio_alloc_irq(dvobj) != _SUCCESS)
 	{
 		goto free_adapter;
 	}
-#endif
+
 	status = _SUCCESS;
 	
 free_adapter:
