@@ -263,12 +263,12 @@ _adapter *rtw_sdio_if1_init(struct dvobj_priv *dvobj, const struct sdio_device_i
 		goto free_adapter;
 	SET_NETDEV_DEV(pnetdev, &dvobj->intf_data.func->dev);
 	padapter = rtw_netdev_priv(pnetdev);
-#if 0
+
 	//3 3. init driver special setting, interface, OS and hardware relative
 	rtw_set_hal_ops(padapter);
 
 	sdio_set_intf_ops(padapter, &padapter->io_ops);
-
+#if 0
 	//4 4. init driver common data
 	if (rtw_init_drv_sw(padapter) == _FAIL) {
 		goto free_adapter;

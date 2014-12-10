@@ -4,6 +4,7 @@
 void rtl8195a_set_hal_ops(PADAPTER padapter)
 {
 	struct hal_ops *pHalFunc = &padapter->HalFunc;
+_func_enter_;
 #ifdef CONFIG_SDIO_HCI
 	pHalFunc->hal_xmit = &rtl8195as_hal_xmit;
 	pHalFunc->hal_mgnt_xmit = &rtl8195as_hal_mgnt_xmit;
@@ -17,4 +18,5 @@ void rtl8195a_set_hal_ops(PADAPTER padapter)
 	pHalFunc->hal_mgnt_xmit = NULL;
 	pHalFunc->xmit_thread_handler = NULL;
 #endif
+_func_exit_;
 }
