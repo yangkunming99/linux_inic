@@ -251,14 +251,14 @@ _func_enter_;
 		goto free_xmitpriv;
 	}
 #endif
-#if 0
+
 	if(rtw_init_cmd_priv(padapter) == _FAIL)
 	{
 		DBG_871X("%s()====>rtw_init_recv_freebuf() failed!\n", __FUNCTION__);
 		ret8 = _FAIL;
 		goto free_recvpriv;
 	}
-#endif
+
 	goto exit;
 
 free_recvpriv:
@@ -289,9 +289,9 @@ _func_enter_;
 	rtw_free_xmit_priv(padapter);
 
 	rtw_free_recv_priv(padapter);
-#if 0
+
 	rtw_free_cmd_priv(padapter);
-#endif
+
 _func_exit_;
 	return _SUCCESS;
 }
