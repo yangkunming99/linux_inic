@@ -1,11 +1,9 @@
-#include "../../include/autoconf.h"
-#include "../../include/rtw_debug.h"
-#include "../../include/rtw_ioctl.h"
-#include "../../include/rtw_xmit.h"
-#include "../../include/8195_desc.h"
-#include "../../include/8195_sdio_reg.h"
-#include "../../include/sdio_ops.h"
-
+#include "autoconf.h"
+#include "rtw_debug.h"
+#include "rtw_ioctl.h"
+#include "rtw_xmit.h"
+#include "rtw_cmd.h"
+#include "hal_intf.h"
 static int rtw_wx_atcmd(PADAPTER padapter, struct net_device *dev, struct iw_point *p)
 {
 	int ret = 0;

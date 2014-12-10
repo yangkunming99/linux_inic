@@ -22,6 +22,7 @@ struct cmd_priv{
 };
 s32 rtw_init_cmd_priv (PADAPTER padapter);
 void rtw_free_cmd_priv (PADAPTER padapter);
+void rtw_free_cmd_obj(struct cmd_obj *pcmd);
 s32	rtw_enqueue_cmd(_queue *queue, struct cmd_obj *obj);
 s32 rtw_cmd_handler(PADAPTER padapter);
 #endif

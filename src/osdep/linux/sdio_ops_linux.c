@@ -1,12 +1,12 @@
-#include "../../include/sdio_ops.h"
-#include "../../include/rtw_debug.h"
-#include "../../include/8195_sdio_reg.h"
-#include "../../include/rtw_io.h"
+#include "sdio_ops.h"
+#include "rtw_debug.h"
+//#include "8195_sdio_reg.h"
+#include "rtw_io.h"
 
 static bool rtw_sdio_claim_host_needed(struct sdio_func *func)
 {
-	PADAPTER padapter = sdio_get_drvdata(func);
-	PSDIO_DATA psdio = &padapter->intf_data;
+	struct dvobj_priv *dvobj = sdio_get_drvdata(func);
+	PSDIO_DATA psdio= &dvobj->intf_data;
 	if (psdio->sys_sdio_irq_thd && psdio->sys_sdio_irq_thd == current)
 		return _FALSE;
 	return _TRUE;
@@ -60,7 +60,7 @@ s32 sd_cmd52_read(PADAPTER padapter, u32 addr, u32 cnt, u8 *pdata)
 	int err=0;
 	struct sdio_func *func;
 	bool claim_needed;	
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 	
 	func = psdio->func;
@@ -87,7 +87,7 @@ s32 _sd_cmd52_write(PADAPTER padapter, u32 addr, u32 cnt, u8 *pdata)
 {
 	
 	int err=0, i;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 	struct sdio_func *func;
 
 _func_enter_;
@@ -117,7 +117,7 @@ s32 sd_cmd52_write(PADAPTER padapter, u32 addr, u32 cnt, u8 *pdata)
 	int err=0;
 	struct sdio_func *func;
 	bool claim_needed;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 	func = psdio->func;
 	claim_needed = rtw_sdio_claim_host_needed(func);
@@ -136,7 +136,7 @@ u8 _sd_read8(PADAPTER padapter, u32 addr, s32 *err)
 {
 	u8 v=0;
 	struct sdio_func *func;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 	
 	func = psdio->func;
@@ -156,7 +156,7 @@ u8 sd_read8(PADAPTER padapter, u32 addr, s32 *err)
 	u8 v=0;
 	struct sdio_func *func;
 	bool claim_needed;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 
 	func = psdio->func;
@@ -181,7 +181,7 @@ u8 sd_f0_read8(PADAPTER padapter,u32 addr, s32 *err)
 	u8 v=0;
 	struct sdio_func *func;
 	bool claim_needed;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 
 	func = psdio->func;
@@ -206,7 +206,7 @@ u16 sd_read16(PADAPTER padapter, u32 addr, s32 *err)
 	u16 v=0;
 	struct sdio_func *func;
 	bool claim_needed;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 	
 	func = psdio->func;
@@ -230,7 +230,7 @@ u32 sd_read32(PADAPTER padapter, u32 addr, s32 *err)
 	u32 v=0;
 	struct sdio_func *func;
 	bool claim_needed;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 
 	func = psdio->func;
@@ -256,7 +256,7 @@ _func_enter_;
 			if (claim_needed) sdio_release_host(func);
 			
 			if (*err == 0){
-				rtw_reset_continual_io_error(padapter);
+				rtw_reset_continual_io_error(padapter->dvobj);
 				break;
 			}else{				
 				DBG_871X(KERN_ERR "%s: (%d) addr=0x%05x, val=0x%x, try_cnt=%d\n", __func__, *err, addr, v, i);
@@ -264,7 +264,7 @@ _func_enter_;
 					//padapter->bSurpriseRemoved = _TRUE;
 				}
 
-				if(rtw_inc_and_chk_continual_io_error(padapter) == _TRUE ){
+				if(rtw_inc_and_chk_continual_io_error(padapter->dvobj) == _TRUE ){
 					//padapter->bSurpriseRemoved = _TRUE;
 					break;
 				}
@@ -287,7 +287,7 @@ void sd_write8(PADAPTER padapter, u32 addr, u8 v, s32 *err)
 {	
 	struct sdio_func *func;
 	bool claim_needed;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 	
 	func = psdio->func;
@@ -308,7 +308,7 @@ void sd_write16(PADAPTER padapter, u32 addr, u16 v, s32 *err)
 {	
 	struct sdio_func *func;
 	bool claim_needed;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 	
 	func = psdio->func;
@@ -329,7 +329,7 @@ void sd_write32(PADAPTER padapter, u32 addr, u32 v, s32 *err)
 {
 	struct sdio_func *func;
 	bool claim_needed;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 	
 	func = psdio->func;
@@ -354,7 +354,7 @@ _func_enter_;
 			sdio_writel(func, v, addr, err);
 			if (claim_needed) sdio_release_host(func);
 			if (*err == 0){
-				rtw_reset_continual_io_error(padapter);
+				rtw_reset_continual_io_error(padapter->dvobj);
 				break;
 			}else{				
 				DBG_871X(KERN_ERR "%s: (%d) addr=0x%05x, val=0x%x, try_cnt=%d\n", __func__, *err, addr, v, i);
@@ -362,7 +362,7 @@ _func_enter_;
 					//padapter->bSurpriseRemoved = _TRUE;
 				}
 
-				if(rtw_inc_and_chk_continual_io_error(padapter) == _TRUE ){
+				if(rtw_inc_and_chk_continual_io_error(padapter->dvobj) == _TRUE ){
 					//padapter->bSurpriseRemoved = _TRUE;
 					break;
 				}
@@ -449,7 +449,7 @@ s32 sd_read(PADAPTER padapter, u32 addr, u32 cnt, void *pdata)
 	struct sdio_func *func;
 	bool claim_needed;
 	s32 err= -EPERM;
-	PSDIO_DATA psdio = &padapter->intf_data;	
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 	func = psdio->func;
 	claim_needed = rtw_sdio_claim_host_needed(func);
@@ -539,7 +539,7 @@ s32 sd_write(PADAPTER padapter, u32 addr, u32 cnt, void *pdata)
 	struct sdio_func *func;
 	bool claim_needed;
 	s32 err=-EPERM;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 
 	func = psdio->func;

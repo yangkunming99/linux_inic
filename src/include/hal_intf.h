@@ -30,5 +30,7 @@ struct hal_ops {
 	s32	(*hal_mgnt_xmit)(_adapter *padapter, struct cmd_obj *pcmd);
 	s32 (*xmit_thread_handler)(_adapter *padapter);
 };
+s32	rtw_hal_xmit(PADAPTER padapter, struct xmit_buf *pxmitbuf);
+s32	rtw_hal_mgnt_xmit(PADAPTER padapter, struct cmd_obj *pcmd);
 s32 rtw_hal_xmit_thread_handler(_adapter *padapter);
 #endif

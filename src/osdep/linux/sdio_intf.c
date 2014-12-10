@@ -45,6 +45,7 @@
 #include "rtw_recv.h"
 #include "rtw_io.h"
 #include "rtw_cmd.h"
+#include "osdep_intf.h"
 MODULE_AUTHOR("Realtek");
 MODULE_DESCRIPTION("RealTek RTL-8195a iNIC");
 MODULE_LICENSE("GPL");
