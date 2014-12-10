@@ -150,7 +150,7 @@ static void rtw_recv_entry(PADAPTER padapter, struct sk_buff *skb)
 	struct net_device *pnetdev = padapter->pnetdev;
 	RXDESC_8195A rxdesc;
 	AT_CMD_DESC atcmddesc;
-	_irqL irqL;
+	//_irqL irqL;
 	unsigned char attype[2];
 	struct cmd_priv *pcmdpriv;
 	

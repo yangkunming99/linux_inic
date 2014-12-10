@@ -38,14 +38,13 @@
 #include "rtl8195a.h"
 #include "osdep_service.h"
 #include "osdep_intf.h"
-
 #include "sdio_ops_linux.h"
 #include "rtw_ioctl.h"
 #include "rtw_xmit.h"
 #include "rtw_recv.h"
 #include "rtw_io.h"
 #include "rtw_cmd.h"
-#include "osdep_intf.h"
+
 MODULE_AUTHOR("Realtek");
 MODULE_DESCRIPTION("RealTek RTL-8195a iNIC");
 MODULE_LICENSE("GPL");
@@ -261,7 +260,7 @@ _adapter *rtw_sdio_if1_init(struct dvobj_priv *dvobj, const struct sdio_device_i
 	pnetdev = rtw_init_netdev(padapter);
 	if (!pnetdev)
 		goto free_adapter;
-	SET_NETDEV_DEV(pnetdev, dvobj_to_dev(dvobj));
+	SET_NETDEV_DEV(pnetdev, &dvobj->intf_data.func->dev);
 	padapter = rtw_netdev_priv(pnetdev);
 	//3 3. init driver special setting, interface, OS and hardware relative
 	rtw_set_hal_ops(padapter);

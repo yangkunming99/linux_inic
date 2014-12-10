@@ -20,6 +20,8 @@
 
 #ifndef __OSDEP_INTF_H_
 #define __OSDEP_INTF_H_
+#include "autoconf.h"
+#include "drv_types.h"
 struct dvobj_priv *devobj_init(void);
 void devobj_deinit(struct dvobj_priv *pdvobj);
 u8 rtw_init_drv_sw(_adapter *padapter);
@@ -43,4 +45,5 @@ extern int rtw_ioctl(struct ifnet * ifp, u_long cmd, caddr_t data);
 
 int rtw_drv_register_netdev(_adapter *padapter);
 void rtw_drv_unregister_netdev(_adapter *padapter);
+
 #endif

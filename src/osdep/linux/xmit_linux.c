@@ -18,14 +18,15 @@
  *
  ******************************************************************************/
 #define _XMIT_OSDEP_C_
-
+#include "drv_types.h"
+#include "xmit_osdep.h"
 int _rtw_xmit_entry(_pkt *pkt, _nic_hdl pnetdev)
 {
-	int ret = 0;
+	//int ret = 0;
 	PADAPTER padapter;
 	struct xmit_buf *pxmitbuf;
 	struct xmit_priv *pxmitpriv;
-	_irqL irqL;
+	//_irqL irqL;
 
 	padapter = (PADAPTER)rtw_netdev_priv(pnetdev);
 	pxmitpriv = &padapter->xmitpriv;

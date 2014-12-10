@@ -3,7 +3,7 @@
 #include "autoconf.h"
 typedef struct _ADAPTER _adapter,ADAPTER,*PADAPTER;
 typedef struct _AT_CMD_DESC AT_CMD_DESC, *PAT_CMD_DESC;
-
+#include "rtw_debug.h"
 #include "osdep_service.h"
 
 #ifdef CONFIG_SDIO_HCI
@@ -27,7 +27,7 @@ struct dvobj_priv
 	INTF_DATA intf_data;
 #endif
 };
-
+/*
 #ifdef PLATFORM_LINUX
 static struct device *dvobj_to_dev(struct dvobj_priv *dvobj)
 {
@@ -39,6 +39,7 @@ static struct device *dvobj_to_dev(struct dvobj_priv *dvobj)
 #endif
 }
 #endif
+*/
 #include "rtw_io.h"
 #include "rtw_xmit.h"
 #include "rtw_recv.h"

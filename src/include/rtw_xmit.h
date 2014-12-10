@@ -74,6 +74,7 @@ s32 rtw_init_xmit_priv(PADAPTER padapter);
 void rtw_free_xmit_priv(PADAPTER padapter);
 struct xmit_buf *rtw_alloc_xmitbuf(PADAPTER padapter);
 s32 rtw_free_xmitbuf(PADAPTER padapter, struct xmit_buf *pxmitbuf);
-s32 rtw_hal_xmit_handler(PADAPTER padapter);
-int rtw_xmit_entry(struct sk_buff *pkt, struct net_device *pnetdev);
+struct xmit_buf* rtw_dequeue_xmitbuf(PADAPTER padapter);
+s32 check_pending_xmitbuf(PADAPTER padapter);
+thread_return rtw_xmit_thread(void *context);
 #endif

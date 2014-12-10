@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
- *
+ *                                        
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of version 2 of the GNU General Public License as
  * published by the Free Software Foundation.
@@ -17,9 +17,16 @@
  *
  *
  ******************************************************************************/
-#define _SDIO_HALINIT_C_
+#ifndef __XMIT_OSDEP_H_
+#define __XMIT_OSDEP_H_
+#include "drv_types.h"
 
-#ifndef CONFIG_SDIO_HCI
-#error "CONFIG_SDIO_HCI shall be on!\n"
+#ifdef PLATFORM_LINUX
+struct xmit_priv;
+struct xmit_buf;
+extern int _rtw_xmit_entry(_pkt *pkt, _nic_hdl pnetdev);
+extern int rtw_xmit_entry(_pkt *pkt, _nic_hdl pnetdev);
 #endif
+
+#endif //__XMIT_OSDEP_H_
 

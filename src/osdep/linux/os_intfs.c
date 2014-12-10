@@ -1,4 +1,6 @@
-
+#include "osdep_intf.h"
+#include "rtw_xmit.h"
+#include "xmit_osdep.h"
 struct dvobj_priv *devobj_init(void)
 {
 	struct dvobj_priv *pdvobj = NULL;
@@ -127,8 +129,8 @@ int netdev_close(struct net_device *pnetdev)
 }
 static int rtw_net_set_mac_address(struct net_device *pnetdev, void *p)
 {
-	_adapter *padapter = (_adapter *)rtw_netdev_priv(pnetdev);
-	struct sockaddr *addr = p;
+//	_adapter *padapter = (_adapter *)rtw_netdev_priv(pnetdev);
+//	struct sockaddr *addr = p;
 //to do, Chris
 /*
 	if(padapter->bup == _FALSE)
@@ -274,7 +276,7 @@ exit:
 
 u8 rtw_free_drv_sw(_adapter *padapter)
 {
-	struct net_device *pnetdev = (struct net_device*)padapter->pnetdev;
+	//struct net_device *pnetdev = (struct net_device*)padapter->pnetdev;
 
 	_rtw_spinlock_free(&padapter->lock);
 

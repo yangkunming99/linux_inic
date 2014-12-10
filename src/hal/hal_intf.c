@@ -19,7 +19,8 @@
  ******************************************************************************/
 
 #define _HAL_INTF_C_
-
+#include "drv_types.h"
+#include "hal_intf.h"
 s32	rtw_hal_xmit(PADAPTER padapter, struct xmit_buf *pxmitbuf)
 {
 	if(padapter->HalFunc.hal_xmit)

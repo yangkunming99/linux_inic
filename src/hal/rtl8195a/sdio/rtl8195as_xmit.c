@@ -1,3 +1,9 @@
+#include "autoconf.h"
+#include "drv_types.h"
+#include "8195_desc.h"
+#include "8195_sdio_reg.h"
+#include "rtw_xmit.h"
+#include "rtl8195a_xmit.h"
 s32 rtl8195as_dequeue_writeport(PADAPTER padapter)
 {
 	struct xmit_buf *pxmitbuf;
@@ -31,12 +37,14 @@ s32 rtl8195as_hal_xmit(PADAPTER padapter, struct xmit_buf *pxmitbuf)
 {
 	struct xmit_priv 	*pxmitpriv = &padapter->xmitpriv;
 	_irqL irqL;
-	s32 err;
+	//s32 err;
+	PTXDESC_8195A ptxdesc;
+	PAT_CMD_DESC patcmd;
 	_pkt *pkt = pxmitbuf->pkt;
 	if(pkt == NULL)
 		return _FALSE;
-	PTXDESC_8195A ptxdesc = (PTXDESC_8195A)pxmitbuf->pdata;
-	PAT_CMD_DESC patcmd = (PAT_CMD_DESC)(pxmitbuf->pdata + SIZE_TX_DESC_8195a);
+	ptxdesc = (PTXDESC_8195A)pxmitbuf->pdata;
+	patcmd = (PAT_CMD_DESC)(pxmitbuf->pdata + SIZE_TX_DESC_8195a);
 	pxmitbuf->pkt_len = pkt->len+SIZE_AT_CMD_DESC+ SIZE_TX_DESC_8195a;
 	ptxdesc->txpktsize=pkt->len+SIZE_AT_CMD_DESC;
 	ptxdesc->offset = SIZE_TX_DESC_8195a;
@@ -56,7 +64,7 @@ s32 rtl8195as_hal_mgnt_xmit(PADAPTER padapter, struct cmd_obj *pcmd)
 	struct xmit_priv 	*pxmitpriv = &padapter->xmitpriv;
 	struct xmit_buf *pxmitbuf;
 	_irqL irqL;
-	s32 err;
+	//s32 err;
 	PTXDESC_8195A ptxdesc;
 	PAT_CMD_DESC patcmd; 
 	//enqueue pkt

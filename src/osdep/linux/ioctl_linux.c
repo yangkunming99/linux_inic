@@ -9,7 +9,7 @@ static int rtw_wx_atcmd(PADAPTER padapter, struct net_device *dev, struct iw_poi
 	int ret = 0;
 	u32 totlen;
 	struct cmd_obj *pcmd;
-	struct cmd_priv *pcmdpriv = &padapter->cmdpriv;
+	//struct cmd_priv *pcmdpriv = &padapter->cmdpriv;
 	if (p->length <= 0 || !p->pointer){
 		ret = -EINVAL;
 		return ret;
