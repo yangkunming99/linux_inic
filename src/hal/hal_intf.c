@@ -41,3 +41,18 @@ s32 rtw_hal_xmit_thread_handler(_adapter *padapter)
 		return padapter->HalFunc.xmit_thread_handler(padapter);
 	return _FAIL;
 }
+void rtw_hal_enable_interrupt(_adapter *padapter)
+{
+	if (padapter->HalFunc.enable_interrupt)
+		padapter->HalFunc.enable_interrupt(padapter);
+	else 
+		DBG_871X("%s: HalFunc.enable_interrupt is NULL!\n", __FUNCTION__);
+	
+}
+void rtw_hal_disable_interrupt(_adapter *padapter)
+{
+	if (padapter->HalFunc.disable_interrupt)
+		padapter->HalFunc.disable_interrupt(padapter);
+	else 
+		DBG_871X("%s: HalFunc.disable_interrupt is NULL!\n", __FUNCTION__);	
+}

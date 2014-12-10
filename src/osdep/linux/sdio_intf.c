@@ -231,7 +231,7 @@ void sdio_free_irq(struct dvobj_priv *dvobj)
 				//dvobj->drv_dbg.dbg_sdio_free_irq_error_cnt++;
 				DBG_871X("%s: sdio_release_irq FAIL(%d)!\n", __func__, err);
             }
-            else
+            //else
             	//dvobj->drv_dbg.dbg_sdio_free_irq_cnt++;
             sdio_release_host(func);
         }
@@ -244,6 +244,29 @@ void rtw_set_hal_ops(PADAPTER padapter)
 {
 	rtl8195a_set_hal_ops(padapter);
 }
+
+static void sd_intf_start(PADAPTER padapter)
+{
+	if (padapter == NULL) {
+		DBG_871X(KERN_ERR "%s: padapter is NULL!\n", __func__);
+		return;
+	}
+
+	// hal dep
+	rtw_hal_enable_interrupt(padapter);
+}
+
+static void sd_intf_stop(PADAPTER padapter)
+{
+	if (padapter == NULL) {
+		DBG_871X(KERN_ERR "%s: padapter is NULL!\n", __func__);
+		return;
+	}
+
+	// hal dep
+	rtw_hal_disable_interrupt(padapter);
+}
+
 
 _adapter *rtw_sdio_if1_init(struct dvobj_priv *dvobj, const struct sdio_device_id  *pdid){
 	int status = _FAIL;
@@ -267,7 +290,16 @@ _func_enter_;
 
 	//3 3. init driver special setting, interface, OS and hardware relative
 	rtw_set_hal_ops(padapter);
+	
+	//3 5. initialize Chip version
+	padapter->intf_start = &sd_intf_start;
+	padapter->intf_stop = &sd_intf_stop;
 
+	padapter->intf_init = &sdio_init;
+	padapter->intf_deinit = &sdio_deinit;
+	padapter->intf_alloc_irq = &sdio_alloc_irq;
+	padapter->intf_free_irq = &sdio_free_irq;
+	
 	sdio_set_intf_ops(padapter, &padapter->io_ops);
 
 	//4 4. init driver common data
@@ -356,10 +388,9 @@ static void __devexit rtl8195a_remove_one(struct sdio_func *func)
 {
 	int err;
 	PADAPTER padapter;
-	DBG_871X("%s():++\n", __FUNCTION__);
 	struct dvobj_priv *dvobj = sdio_get_drvdata(func);
 	padapter = dvobj->if1;
-	
+	DBG_871X("%s():++\n", __FUNCTION__);	
 	if(padapter)
 	{	
 		rtw_drv_unregister_netdev(padapter);

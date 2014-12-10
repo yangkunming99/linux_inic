@@ -23,22 +23,22 @@
 
 
 //SDIO Local registers
-#define SDIO_TX_CTRL						0x00 // 1byte
-#define SDIO_STATIS_RECOVERY_TIMOUT		0x02 // 2bytes
-#define SDIO_32K_TRANS_IDLE_TIME			0x04 // 2bytes
-#define SDIO_HIMR							0x14 // 4bytes
-#define SDIO_HISR							0x18 // 4bytes
-#define SDIO_RX0_REQ_LEN					0x1c // 4bytes
-#define SDIO_FREE_TXBD_NUM				0x20 // 2bytes
-#define SDIO_TX_SEQNUM 					0x24 // 1byte, not used
-#define HCPWM								0x38 // 1byte, host domain, sync from CCPWM
-#define HCPWM2								0x3a // 2bytes, sync from CCPWM2
-#define REG_SDIO_H2C_MSG					0x60 // 4bytes, host domain, sync from CPU_H2C_MSG
-#define REG_SDIO_C2H_MSG					0x64 // 4bytes, sync from CPU_C2H_MSG
-#define REG_SDIO_H2C_MSG_EXT				0x68 // 4bytes, sync from CPU_H2C_MSG_EXT
-#define REG_SDIO_C2H_MSG_EXT				0x6c // 4bytes, sync from CPU_C2H_MSG_EXT
-#define HRPWM								0x80 // 1byte, driver to FW, host domain, sync to CRPWM
-#define HRPWM2								0x82 // 2bytes, driver to FW, host domain, sync to CRPWM2
+#define SDIO_REG_TX_CTRL						0x00 // 1byte
+#define SDIO_REG_STATIS_RECOVERY_TIMOUT	0x02 // 2bytes
+#define SDIO_REG_32K_TRANS_IDLE_TIME		0x04 // 2bytes
+#define SDIO_REG_HIMR							0x14 // 4bytes
+#define SDIO_REG_HISR							0x18 // 4bytes
+#define SDIO_REG_RX0_REQ_LEN					0x1c // 4bytes
+#define SDIO_REG_FREE_TXBD_NUM				0x20 // 2bytes
+#define SDIO_REG_TX_SEQNUM 					0x24 // 1byte, not used
+#define SDIO_REG_HCPWM						0x38 // 1byte, host domain, sync from CCPWM
+#define SDIO_REG_HCPWM2						0x3a // 2bytes, sync from CCPWM2
+#define SDIO_REG_H2C_MSG						0x60 // 4bytes, host domain, sync from CPU_H2C_MSG
+#define SDIO_REG_C2H_MSG						0x64 // 4bytes, sync from CPU_C2H_MSG
+#define SDIO_REG_H2C_MSG_EXT					0x68 // 4bytes, sync from CPU_H2C_MSG_EXT
+#define SDIO_REG_C2H_MSG_EXT					0x6c // 4bytes, sync from CPU_C2H_MSG_EXT
+#define SDIO_REG_HRPWM						0x80 // 1byte, driver to FW, host domain, sync to CRPWM
+#define SDIO_REG_HRPWM2						0x82 // 2bytes, driver to FW, host domain, sync to CRPWM2
 
 // SDIO Host Interrupt Service Routine
 #define SDIO_HISR_RX_REQUEST				BIT0
@@ -66,4 +66,6 @@
 // RTL8195A SDIO Host Interrupt Mask Register
 #define SDIO_HIMR_RX_REQUEST_MSK		BIT0
 #define SDIO_HIMR_AVAL_MSK				BIT1
+
+#define SDIO_HIMR_DISABLED			0
 #endif

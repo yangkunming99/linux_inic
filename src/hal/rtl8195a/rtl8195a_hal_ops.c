@@ -9,6 +9,8 @@ _func_enter_;
 	pHalFunc->hal_xmit = &rtl8195as_hal_xmit;
 	pHalFunc->hal_mgnt_xmit = &rtl8195as_hal_mgnt_xmit;
 	pHalFunc->xmit_thread_handler = &rtl8195as_hal_xmit_handler;
+	pHalFunc->enable_interrupt = &EnableInterrupt8195ASdio;
+	pHalFunc->disable_interrupt = &DisableInterrupt8195ASdio;
 #elif defined(CONFIG_USB_HCI)
 	pHalFunc->hal_xmit = &rtl8195au_hal_xmit;
 	pHalFunc->hal_mgnt_xmit = &rtl8195au_hal_mgnt_xmit;

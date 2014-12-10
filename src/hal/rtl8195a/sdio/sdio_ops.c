@@ -660,7 +660,7 @@ void sd_int_dpc(PADAPTER padapter)
 			if(psdio->SdioRxFIFOSize == 0)
 			{
 				u8 data[4];
-				_sdio_local_read(padapter, SDIO_RX0_REQ_LEN, 4, data);
+				_sdio_local_read(padapter, SDIO_REG_RX0_REQ_LEN, 4, data);
 				psdio->SdioRxFIFOSize = le16_to_cpu(*(u16*)data);
 			}
 
@@ -688,7 +688,7 @@ void sd_int_hal(PADAPTER padapter)
 	u8 data[6];
 	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 	//read directly from SDIO_HISR(32bits) and SDIO_RX0_REQ_LEN(0~23), but 16bits are enough
-	_sdio_local_read(padapter, SDIO_HISR, 6, data); 
+	_sdio_local_read(padapter, SDIO_REG_HISR, 6, data); 
 	psdio->sdio_hisr = le32_to_cpu(*(u32*)data);
 	psdio->SdioRxFIFOSize = le16_to_cpu(*(u16*)&data[4]);
 	if (psdio->sdio_hisr & psdio->sdio_himr)
@@ -701,7 +701,7 @@ void sd_int_hal(PADAPTER padapter)
 		v32 = psdio->sdio_hisr & MASK_SDIO_HISR_CLEAR;
 		if (v32) {
 			v32 = cpu_to_le32(v32);
-			_sdio_local_write(padapter, SDIO_HISR, 4, (u8*)&v32);
+			_sdio_local_write(padapter, SDIO_REG_HISR, 4, (u8*)&v32);
 		}
 
 		sd_int_dpc(padapter);
@@ -734,4 +734,48 @@ _func_enter_;
 	pops->_sd_f0_read8 = sdio_f0_read8;
 
 _func_exit_;
+}
+
+//
+//	Description:
+//		Enalbe SDIO Host Interrupt Mask configuration on SDIO local domain.
+//
+//	Assumption:
+//		1. Using SDIO Local register ONLY for configuration.
+//		2. PASSIVE LEVEL
+//
+//	Created by Roger, 2011.02.11.
+//
+void EnableInterrupt8195ASdio(PADAPTER padapter)
+{
+	PSDIO_DATA psdio = &padapter->dvobj->intf_data;
+	u32 himr;
+
+	himr = cpu_to_le32(psdio->sdio_himr);
+	sdio_local_write(padapter, SDIO_REG_HIMR, 4, (u8*)&himr);
+
+	//
+	// <Roger_Notes> There are some C2H CMDs have been sent before system interrupt is enabled, e.g., C2H, CPWM.
+	// So we need to clear all C2H events that FW has notified, otherwise FW won't schedule any commands anymore.
+	// 2011.10.19.
+	//
+	//rtw_write8(padapter, REG_C2HEVT_CLEAR, C2H_EVT_HOST_CLOSE);
+}
+
+//
+//	Description:
+//		Disable SDIO Host IMR configuration to mask unnecessary interrupt service.
+//
+//	Assumption:
+//		Using SDIO Local register ONLY for configuration.
+//
+//	Created by Roger, 2011.02.11.
+//
+void DisableInterrupt8195ASdio(PADAPTER padapter)
+{
+	u32 himr;
+
+	himr = cpu_to_le32(SDIO_HIMR_DISABLED);
+	sdio_local_write(padapter, SDIO_REG_HIMR, 4, (u8*)&himr);
+
 }
