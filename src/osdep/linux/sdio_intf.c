@@ -351,7 +351,7 @@ static void __devexit rtl8195a_remove_one(struct sdio_func *func)
 	PADAPTER padapter;
 	DBG_871X("%s():++\n", __FUNCTION__);
 	struct dvobj_priv *dvobj = sdio_get_drvdata(func);
-	padapter = dvobj_priv->if1;
+	padapter = dvobj->if1;
 	
 	if(padapter)
 	{	
