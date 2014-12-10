@@ -1,6 +1,7 @@
 #ifndef _RTW_IO_H_
 #define _RTW_IO_H_
-#include "autoconf.h"
+
+struct _io_ops;
 #include "drv_types.h"
 struct _io_ops
 {
@@ -23,7 +24,6 @@ struct _io_ops
 	u8 (*_sd_f0_read8)(PADAPTER padapter, u32 addr);
 #endif
 };
-
 
 #define SD_IO_TRY_CNT (8)
 #define MAX_CONTINUAL_IO_ERR SD_IO_TRY_CNT

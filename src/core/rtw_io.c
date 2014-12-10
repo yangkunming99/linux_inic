@@ -1,7 +1,7 @@
 #include "autoconf.h"
 #include "rtw_debug.h"
+#include "drv_types.h"
 #include "rtw_io.h"
-
 
 /*
 * Increase and check if the continual_io_error of this @param dvobjprive is larger than MAX_CONTINUAL_IO_ERR

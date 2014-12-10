@@ -1,12 +1,10 @@
 #ifndef __DRV_TYPES_H__
 #define __DRV_TYPES_H__
 #include "autoconf.h"
-#include "osdep_service.h"
-#include "8195_desc.h"
-
 typedef struct _ADAPTER _adapter,ADAPTER,*PADAPTER;
 typedef struct _AT_CMD_DESC AT_CMD_DESC, *PAT_CMD_DESC;
 
+#include "osdep_service.h"
 
 #ifdef CONFIG_SDIO_HCI
 #include "drv_types_sdio.h"
@@ -41,12 +39,11 @@ static struct device *dvobj_to_dev(struct dvobj_priv *dvobj)
 #endif
 }
 #endif
-
+#include "rtw_io.h"
 #include "rtw_xmit.h"
 #include "rtw_recv.h"
 #include "rtw_cmd.h"
 #include "hal_intf.h"
-#include "rtw_io.h"
 struct _ADAPTER
 {
 	_lock lock;
