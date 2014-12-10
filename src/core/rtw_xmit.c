@@ -101,10 +101,6 @@ s32 rtw_init_xmit_freebuf(struct xmit_priv *pxmitpriv)
 
 		pxmitbuf->pdata = pxmitpriv->xmit_pdata+i*MAX_XMITBUF_SZ;
 		pxmitbuf->pkt_len=0;
- 		pxmitbuf->ptxdesc = (PTXDESC_8195A)pxmitbuf->pdata;
-		pxmitbuf->patcmd = (PAT_CMD_DESC)(pxmitbuf->pdata+SIZE_TX_DESC_8195a);
-		pxmitbuf->ptxdesc->offset = SIZE_TX_DESC_8195a;
-		pxmitbuf->patcmd->offset = SIZE_AT_CMD_DESC;
 
 		rtw_list_insert_tail(&(pxmitbuf->list), &(pxmitpriv->free_xmit_queue.queue));
 
@@ -234,71 +230,15 @@ _enter_critical_bh(&pframe_queue->lock, &irqL);
 _exit_critical_bh(&pframe_queue->lock, &irqL);
 	return pxmitbuf;
 }
-s32 rtl8195a_dequeue_writeport(PADAPTER padapter)
+thread_return rtw_xmit_thread(void *context)
 {
-	struct xmit_buf *pxmitbuf;
-
-	pxmitbuf = rtw_dequeue_xmitbuf(padapter);
-	if(pxmitbuf == NULL)
-		return _TRUE;
-	rtw_write_port(padapter, WLAN_TX_FIFO_DEVICE_ID, pxmitbuf->pkt_len, pxmitbuf->pdata);
-	rtw_free_xmitbuf(padapter, pxmitbuf);
-	return _FAIL;
-}
-s32 rtw_hal_xmit_handler(PADAPTER padapter)
-{
-	s32 ret;
-	u8 is_queue_pending;
-	u8 is_queue_empty ;
-	struct xmit_priv *pxmitpriv = &padapter->xmitpriv;
-	ret = _rtw_down_sema(&pxmitpriv->xmit_sema);
-	if(ret == _FAIL)
-		return _FAIL;
-	is_queue_pending = check_pending_xmitbuf(padapter);
-	if(is_queue_pending == _FALSE)
-		return _SUCCESS;
-
-	do{
-	is_queue_empty=rtl8195a_dequeue_writeport(padapter);
-	}while(!is_queue_empty);
-	return _SUCCESS;
-}
-int rtw_xmit_entry(struct sk_buff *pkt, struct net_device *pnetdev)
-{
-	int ret = 0;
+	s32 err;
 	PADAPTER padapter;
-	struct xmit_buf *pxmitbuf;
-	struct xmit_priv *pxmitpriv;
-	_irqL irqL;
-
-	padapter = (PADAPTER)rtw_netdev_priv(pnetdev);
-	pxmitpriv = &padapter->xmitpriv;
-#ifdef GET_SYS_TIME
-#include <linux/time.h>
-extern struct timeval time_out;
-do_gettimeofday(&time_out);
-#endif
-	//enqueue pkt
-	pxmitbuf = rtw_alloc_xmitbuf(padapter);
-	if(!pxmitbuf)
-	{
-		DBG_871X("%s(): pxmitbuf allocated failed!\n", __FUNCTION__);
-		pnetdev->stats.tx_dropped = (++(padapter->stats.tx_dropped));
-		return ret;
-	}
-	pxmitbuf->pkt_len = pkt->len+SIZE_AT_CMD_DESC+ SIZE_TX_DESC_8195a;
-	pxmitbuf->ptxdesc->txpktsize=pkt->len+SIZE_AT_CMD_DESC;
-	pxmitbuf->patcmd->datatype = 0;
-	pxmitbuf->patcmd->pktsize = pkt->len;
-	_rtw_memcpy(pxmitbuf->pdata+sizeof(TX_DESC)+sizeof(AT_CMD_DESC), pkt->data, pkt->len);	
-_enter_critical_bh(&pxmitpriv->xmitbuf_pending_queue.lock, &irqL);
-	rtw_list_insert_tail(&pxmitbuf->list, get_list_head(&pxmitpriv->xmitbuf_pending_queue));
-_exit_critical_bh(&pxmitpriv->xmitbuf_pending_queue.lock, &irqL);
-	pnetdev->stats.tx_packets=(++(padapter->stats.tx_packets));
-	pnetdev->stats.tx_bytes=(padapter->stats.tx_bytes+=pkt->len);
-	_rtw_up_sema(&pxmitpriv->xmit_sema);
-	if(pkt)
-		_rtw_skb_free(pkt);
-	return ret;
+	padapter = (PADAPTER)context;
+	thread_enter("RTW_XMIT_THREAD");
+	do{
+		err = rtw_hal_xmit_thread_handler(padapter);
+		flush_signals_thread();
+	}while((_SUCCESS == err)&&(padapter->xmitpriv->xmitThread));
+	thread_exit();
 }
-

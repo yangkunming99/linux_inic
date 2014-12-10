@@ -33,16 +33,21 @@ static int rtw_wx_atcmd(PADAPTER padapter, struct net_device *dev, struct iw_poi
 	}
 	if (copy_from_user((pcmd->parmbuf), p->pointer, p->length))
 	{
-		rtw_mfree((u8*)pcmd->parmbuf, totlen);
-		rtw_mfree((u8*)pcmd, sizeof(struct cmd_obj));
+		rtw_free_cmd_obj(pcmd);
 		ret = -EFAULT;
 		goto exit;
 	}
+/*
 	_rtw_init_listhead(&pcmd->list);
 	ret = rtw_enqueue_cmd(&pcmdpriv->cmd_queue, pcmd);
 	if(ret == _SUCCESS)
 		_rtw_up_sema(&pcmdpriv->cmd_sema);	
-	return 0;
+*/
+	if(rtw_hal_mgnt_xmit(padapter, pcmd) == _FALSE){
+		ret = -ENOMEM;
+		goto exit;
+	}
+
 exit:
 	return ret;
 }

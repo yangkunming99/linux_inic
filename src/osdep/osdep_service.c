@@ -952,6 +952,28 @@ inline int ATOMIC_DEC_RETURN(ATOMIC_T *v)
 
 
 #ifdef PLATFORM_LINUX
+struct net_device *rtw_alloc_etherdev_with_old_priv(int sizeof_priv, void *old_priv)
+{
+	struct net_device *pnetdev;
+	struct rtw_netdev_priv_indicator *pnpi;
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35))
+	pnetdev = alloc_etherdev_mq(sizeof(struct rtw_netdev_priv_indicator), 4);
+#else
+	pnetdev = alloc_etherdev(sizeof(struct rtw_netdev_priv_indicator));
+#endif
+	if (!pnetdev)
+		goto RETURN;
+	
+	pnpi = netdev_priv(pnetdev);
+	pnpi->priv=old_priv;
+	pnpi->sizeof_priv=sizeof_priv;
+
+RETURN:
+	return pnetdev;
+}
+
+
 struct net_device *rtw_alloc_etherdev(int sizeof_priv)
 {
 	struct net_device *pnetdev;

@@ -34,22 +34,29 @@ void rtw_sctx_done(struct submit_ctx **sctx);
 struct xmit_buf
 {
 	_list list;
+	_pkt *pkt;
 	u16 pkt_len;
 	u8 *pdata;
-	PTXDESC_8195A ptxdesc;
-	PAT_CMD_DESC patcmd;
 };
 struct xmit_priv
 {
 	_lock lock;
-	_sema xmit_sema;
-	void *xmitThread;
+	
 	_queue free_xmit_queue;
-	_queue xmitbuf_pending_queue;	
+	_queue xmitbuf_pending_queue;
+	
 	u8 *pallocated_freebuf;
 	u8 *xmit_freebuf;
 	u8 *pallocated_pdata;
 	u8 *xmit_pdata;
+
+	u64	tx_bytes;
+	u64	tx_pkts;
+	u64	tx_drop;
+
+	_sema xmit_sema;
+	_thread_hdl_ xmitThread;
+
 };
 #define XMITBUF_ALIGN_SZ		4
 

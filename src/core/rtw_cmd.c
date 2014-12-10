@@ -157,6 +157,7 @@ _func_exit_;
 
 	return obj;
 }
+
 s32 rtw_cmd_dequeue_writeport(PADAPTER padapter)
 {
 	struct cmd_obj *pcmdobj;
@@ -198,4 +199,18 @@ s32 rtw_cmd_handler(PADAPTER padapter)
 	is_queue_empty=rtw_cmd_dequeue_writeport(padapter);
 	}while(!is_queue_empty);
 	return _SUCCESS;
+}
+
+int rtw_cmd_thread(void *context)
+{
+	s32 err;
+	PADAPTER padapter;
+	//DBG_871X("%s=======>\n", __FUNCTION__);
+	padapter = (PADAPTER)context;
+	thread_enter("RTW_CMD_THREAD");
+	do{
+		err = rtw_cmd_handler(padapter);
+		flush_signals_thread();
+	}while((_SUCCESS == err)&&(padapter->cmdpriv->cmdThread));
+	thread_exit();
 }
