@@ -233,6 +233,8 @@ u8 rtw_init_drv_sw(_adapter *padapter)
 {
 
 	u8	ret8 = _SUCCESS;
+
+_func_enter_;
 	_rtw_spinlock_init(&padapter->lock);
 	if(rtw_init_xmit_priv(padapter) == _FAIL)
 	{
@@ -240,6 +242,7 @@ u8 rtw_init_drv_sw(_adapter *padapter)
 		ret8 = _FAIL;
 		goto free_spinlock;
 	}
+#if 0
 #ifdef USE_RECV_TASKLET
 	if(rtw_init_recv_priv(padapter) == _FAIL)
 	{
@@ -254,6 +257,7 @@ u8 rtw_init_drv_sw(_adapter *padapter)
 		ret8 = _FAIL;
 		goto free_recvpriv;
 	}
+#endif
 	goto exit;
 
 free_recvpriv:
@@ -278,15 +282,16 @@ exit:
 u8 rtw_free_drv_sw(_adapter *padapter)
 {
 	//struct net_device *pnetdev = (struct net_device*)padapter->pnetdev;
-
+_func_enter_;
 	_rtw_spinlock_free(&padapter->lock);
 
+	rtw_free_xmit_priv(padapter);
+#if 0
 	rtw_free_cmd_priv(padapter);
 
-	rtw_free_xmit_priv(padapter);
-
 	rtw_free_recv_priv(padapter);
-
+#endif
+_func_exit_;
 	return _SUCCESS;
 }
 
