@@ -242,7 +242,7 @@ _func_enter_;
 		ret8 = _FAIL;
 		goto free_spinlock;
 	}
-#if 0
+
 #ifdef USE_RECV_TASKLET
 	if(rtw_init_recv_priv(padapter) == _FAIL)
 	{
@@ -251,6 +251,7 @@ _func_enter_;
 		goto free_xmitpriv;
 	}
 #endif
+#if 0
 	if(rtw_init_cmd_priv(padapter) == _FAIL)
 	{
 		DBG_871X("%s()====>rtw_init_recv_freebuf() failed!\n", __FUNCTION__);
@@ -286,10 +287,10 @@ _func_enter_;
 	_rtw_spinlock_free(&padapter->lock);
 
 	rtw_free_xmit_priv(padapter);
-#if 0
-	rtw_free_cmd_priv(padapter);
 
 	rtw_free_recv_priv(padapter);
+#if 0
+	rtw_free_cmd_priv(padapter);
 #endif
 _func_exit_;
 	return _SUCCESS;
