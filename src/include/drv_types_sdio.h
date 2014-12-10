@@ -19,7 +19,7 @@
  ******************************************************************************/
 #ifndef __DRV_TYPES_SDIO_H__
 #define __DRV_TYPES_SDIO_H__
-
+#include "autoconf.h"
 // SDIO Header Files
 #ifdef PLATFORM_LINUX
 	#include <linux/mmc/sdio_func.h> 

@@ -19,6 +19,7 @@
  ******************************************************************************/
 #ifndef __HAL_INTF_H__
 #define __HAL_INTF_H__
+#include "autoconf.h"
 #include "basic_types.h"
 #include "drv_types.h"
 enum RTL871X_HCI_TYPE {

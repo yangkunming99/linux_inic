@@ -313,7 +313,7 @@ static int __devinit rtl8195a_init_one(struct sdio_func *func, const struct sdio
 	if ((dvobj = sdio_dvobj_init(func)) == NULL) {
 		goto exit;
 	}
-	
+/*	
 	// 2. init SDIO interface 
 	if ((padapter = rtw_sdio_if1_init(dvobj, id)) == NULL) {
 		DBG_871X("rtw_init_adapter Failed!\n");
@@ -329,6 +329,7 @@ static int __devinit rtl8195a_init_one(struct sdio_func *func, const struct sdio
 	{
 		goto free_adapter;
 	}
+*/
 	status = _SUCCESS;
 	
 free_adapter:
@@ -349,8 +350,8 @@ static void __devexit rtl8195a_remove_one(struct sdio_func *func)
 	int err;
 	PADAPTER padapter;
 	DBG_871X("%s():++\n", __FUNCTION__);
-	padapter = sdio_get_drvdata(func);
-	
+	struct dvobj_priv *dvobj = sdio_get_drvdata(func);
+#if 0	
 	if(padapter)
 	{	
 		rtw_drv_unregister_netdev(padapter);
@@ -363,6 +364,7 @@ static void __devexit rtl8195a_remove_one(struct sdio_func *func)
 		}
 		rtw_sdio_if1_deinit(padapter);
 	}
+#endif
 	sdio_dvobj_deinit(func);
 }
 

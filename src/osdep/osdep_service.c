@@ -1,7 +1,7 @@
 #define __OSDEP_SERVICE_C__
-#include "../include/autoconf.h"
-#include "../include/basic_types.h"
-#include "../include/osdep_service.h"
+#include "autoconf.h"
+#include "basic_types.h"
+#include "osdep_service.h"
 
 #ifdef DBG_MEMORY_LEAK
 #ifdef PLATFORM_LINUX

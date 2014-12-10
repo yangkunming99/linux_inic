@@ -1,12 +1,11 @@
-#include "../include/autoconf.h"
-#include "../include/rtw_debug.h"
-#include "../include/8195_desc.h"
-#include "../include/8195_sdio_reg.h"
-#include "../include/sdio_ops.h"
-#include "../include/osdep_service.h"
-#include "../include/sdio_ops_linux.h"
-#include "../include/rtw_recv.h"
-extern struct global_buf gDataBuf;
+#include "autoconf.h"
+#include "rtw_debug.h"
+#include "8195_desc.h"
+#include "8195_sdio_reg.h"
+#include "sdio_ops.h"
+#include "osdep_service.h"
+#include "sdio_ops_linux.h"
+#include "rtw_recv.h"
 
 struct recv_buf *rtw_dequeue_recvbuf (_queue *queue)
 {

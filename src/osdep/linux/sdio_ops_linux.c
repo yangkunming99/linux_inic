@@ -1,6 +1,5 @@
 #include "sdio_ops.h"
 #include "rtw_debug.h"
-//#include "8195_sdio_reg.h"
 #include "rtw_io.h"
 
 static bool rtw_sdio_claim_host_needed(struct sdio_func *func)
