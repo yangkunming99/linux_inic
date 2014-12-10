@@ -299,6 +299,7 @@ exit:
 static void rtw_sdio_if1_deinit(_adapter *if1)
 {
 	struct net_device *pnetdev = if1->pnetdev;
+	DBG_871X("%s(): ++ \n", __FUNCTION__); 
 //	rtw_free_drv_sw(if1);
 	if(pnetdev)
 		rtw_free_netdev(pnetdev);

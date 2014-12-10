@@ -1007,13 +1007,13 @@ void rtw_free_netdev(struct net_device * netdev)
 	
 	if(!netdev)
 		goto RETURN;
-	
+	 
 	pnpi = netdev_priv(netdev);
-
+	 
 	if(!pnpi->priv)
 		goto RETURN;
-
-	rtw_mfree(pnpi->priv, pnpi->sizeof_priv);
+	 
+	rtw_vmfree(pnpi->priv, pnpi->sizeof_priv);
 	free_netdev(netdev);
 
 RETURN:
