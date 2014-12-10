@@ -300,22 +300,22 @@ int rtw_drv_register_netdev(_adapter * padapter){
 
 	int ret = _SUCCESS;
 	struct net_device *pnetdev = padapter->pnetdev;
-
+_func_enter_;
 	netif_carrier_off(pnetdev);
 
 	if(register_netdev(pnetdev)!=0){
 		ret = _FAIL;
 	}
-	
+_func_exit_;
 	return ret;
 }
 
 void rtw_drv_unregister_netdev(_adapter * padapter){
 
 	struct net_device *pnetdev = padapter->pnetdev;
-
+_func_enter_;
 	netif_carrier_off(pnetdev);
 
 	unregister_netdev(pnetdev);
-	
+_func_exit_;
 }

@@ -326,12 +326,12 @@ static int __devinit rtl8195a_init_one(struct sdio_func *func, const struct sdio
 		DBG_871X("rtw_init_adapter Failed!\n");
 		goto free_dvobj;
 	}
-#if 0	
+	
 	// 2.dev_alloc_name && register_netdev
 	if((rtw_drv_register_netdev(padapter)) != _SUCCESS) {
 		goto free_adapter;
 	}	
-
+#if 0
 	if (sdio_alloc_irq(dvobj) != _SUCCESS)
 	{
 		goto free_adapter;
@@ -362,9 +362,7 @@ static void __devexit rtl8195a_remove_one(struct sdio_func *func)
 	
 	if(padapter)
 	{	
-#if 0
 		rtw_drv_unregister_netdev(padapter);
-#endif
 		/* test surprise remove */
 		sdio_claim_host(func);
 		sdio_readb(func, 0, &err);
