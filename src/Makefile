@@ -41,7 +41,8 @@ inic_8195a-objs := osdep/linux/sdio_intf.o hal/rtl8195a/sdio/sdio_ops.o \
 			osdep/linux/sdio_ops_linux.o osdep/linux/ioctl_linux.o \
 			osdep/osdep_service.o osdep/linux/os_intfs.o \
 			hal/hal_intf.o hal/rtl8195a/rtl8195a_hal_ops.o \
-			hal/rtl8195a/sdio/rtl8195as_xmit.o osdep/linux/xmit_linux.o
+			hal/rtl8195a/sdio/rtl8195as_xmit.o osdep/linux/xmit_linux.o \
+			core/rtw_debug.o
 
 BASEDIR := /lib/modules/$(shell uname -r)
 KERNELDIR ?= $(BASEDIR)/build

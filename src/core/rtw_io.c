@@ -2,7 +2,7 @@
 #include "rtw_debug.h"
 #include "drv_types.h"
 #include "rtw_io.h"
-
+#define _RTW_IO_C_
 /*
 * Increase and check if the continual_io_error of this @param dvobjprive is larger than MAX_CONTINUAL_IO_ERR
 * @return _TRUE:

@@ -6,7 +6,7 @@
 #include "osdep_service.h"
 #include "sdio_ops_linux.h"
 #include "rtw_recv.h"
-
+#define _RTW_RECV_C_
 struct recv_buf *rtw_dequeue_recvbuf (_queue *queue)
 {
 	_irqL irqL;

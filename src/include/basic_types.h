@@ -1,9 +1,12 @@
 #ifndef __BASIC_TYPES_H__
 #define __BASIC_TYPES_H__
 #include "autoconf.h"
+#ifndef _func_enter_
 #define _func_enter_	do{}while(0)
+#endif
+#ifndef _func_exit_
 #define _func_exit_	do{}while(0)
-
+#endif
 #define SUCCESS	0
 #define FAIL	-1
 

@@ -1,6 +1,7 @@
 #include "osdep_intf.h"
 #include "rtw_xmit.h"
 #include "xmit_osdep.h"
+#define _OS_INTFS_C_
 struct dvobj_priv *devobj_init(void)
 {
 	struct dvobj_priv *pdvobj = NULL;
@@ -190,7 +191,7 @@ struct net_device *rtw_init_netdev(_adapter *old_padapter)
 {
 	_adapter *padapter;
 	struct net_device *pnetdev;
-
+	RT_TRACE(_module_os_intfs_c_,_drv_info_,("+init_net_dev\n"));
 	if(old_padapter != NULL)
 		pnetdev = rtw_alloc_etherdev_with_old_priv(sizeof(_adapter), (void *)old_padapter);
 	else

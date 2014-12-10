@@ -7,7 +7,7 @@
 #include "8195_sdio_reg.h"
 #include "sdio_ops.h"
 #include "hal_intf.h"
-
+#define _RTW_XMIT_C_
 void rtw_sctx_init(struct submit_ctx *sctx, int timeout_ms)
 {
 	sctx->timeout_ms = timeout_ms;

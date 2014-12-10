@@ -41,3 +41,4 @@
 /*******debug relative config*********/
 #define DBG 1
 #define CONFIG_DEBUG
+#define CONFIG_DEBUG_RTL871X

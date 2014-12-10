@@ -251,6 +251,7 @@ _adapter *rtw_sdio_if1_init(struct dvobj_priv *dvobj, const struct sdio_device_i
 	PADAPTER padapter = NULL;
 	u8 mac_addr[ETH_ALEN];
 	if ((padapter = (_adapter *)rtw_zvmalloc(sizeof(*padapter))) == NULL) {
+		DBG_871X("%s: vmalloc for padapter failed!\n", __FUNCTION__);
 		goto exit;
 	}
 	padapter->dvobj = dvobj;
@@ -262,6 +263,7 @@ _adapter *rtw_sdio_if1_init(struct dvobj_priv *dvobj, const struct sdio_device_i
 		goto free_adapter;
 	SET_NETDEV_DEV(pnetdev, &dvobj->intf_data.func->dev);
 	padapter = rtw_netdev_priv(pnetdev);
+#if 0
 	//3 3. init driver special setting, interface, OS and hardware relative
 	rtw_set_hal_ops(padapter);
 
@@ -280,7 +282,8 @@ _adapter *rtw_sdio_if1_init(struct dvobj_priv *dvobj, const struct sdio_device_i
 	mac_addr[4] = 0x00;
 	mac_addr[5] = 0x00;
 	_rtw_memcpy(pnetdev->dev_addr, mac_addr, ETH_ALEN);
-	
+#endif
+	status = _SUCCESS;
 free_adapter:
 	if (status != _SUCCESS) {
 		if (pnetdev)
@@ -296,7 +299,7 @@ exit:
 static void rtw_sdio_if1_deinit(_adapter *if1)
 {
 	struct net_device *pnetdev = if1->pnetdev;
-	rtw_free_drv_sw(if1);
+//	rtw_free_drv_sw(if1);
 	if(pnetdev)
 		rtw_free_netdev(pnetdev);
 }

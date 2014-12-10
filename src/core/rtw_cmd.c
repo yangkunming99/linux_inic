@@ -7,6 +7,7 @@
 #include "8195_sdio_reg.h"
 #include "sdio_ops.h"
 #include "rtw_cmd.h"
+#define _RTW_CMD_C_
 /*
 void rtw_sctx_init(struct completion *done)
 {
