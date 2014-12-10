@@ -21,19 +21,33 @@
 #define _HAL_INTF_C_
 #include "drv_types.h"
 #include "hal_intf.h"
+uint	 rtw_hal_init(_adapter *padapter) 
+{
+	if(padapter->HalFunc.hal_init)
+		return padapter->HalFunc.hal_init(padapter);
+
+	return _FAIL;	
+}
+uint	 rtw_hal_deinit(_adapter *padapter) 
+{
+	if(padapter->HalFunc.hal_deinit)
+		return padapter->HalFunc.hal_deinit(padapter);
+
+	return _FAIL;	
+}
 s32	rtw_hal_xmit(PADAPTER padapter, struct xmit_buf *pxmitbuf)
 {
 	if(padapter->HalFunc.hal_xmit)
 		return padapter->HalFunc.hal_xmit(padapter, pxmitbuf);
 
-	return _FALSE;	
+	return _FAIL;	
 }
 s32	rtw_hal_mgnt_xmit(PADAPTER padapter, struct cmd_obj *pcmd)
 {
 	if(padapter->HalFunc.hal_mgnt_xmit)
 		return padapter->HalFunc.hal_mgnt_xmit(padapter, pcmd);
 
-	return _FALSE;	
+	return _FAIL;	
 }
 s32 rtw_hal_xmit_thread_handler(_adapter *padapter)
 {

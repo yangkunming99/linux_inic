@@ -738,6 +738,25 @@ _func_exit_;
 
 //
 //	Description:
+//		Initialize SDIO Host Interrupt Mask configuration variables for future use.
+//
+//	Assumption:
+//		Using SDIO Local register ONLY for configuration.
+//
+//	Created by Roger, 2011.02.11.
+//
+void InitInterrupt8195ASdio(PADAPTER padapter)
+{
+	struct dvobj_priv *psdpriv = padapter->dvobj;
+	PSDIO_DATA psdio = &psdpriv->intf_data;
+	psdio->sdio_himr = (u32)(	\
+								SDIO_HIMR_RX_REQUEST_MSK | 
+								SDIO_HIMR_AVAL_MSK	|	
+								0);
+}
+
+//
+//	Description:
 //		Enalbe SDIO Host Interrupt Mask configuration on SDIO local domain.
 //
 //	Assumption:
@@ -778,4 +797,14 @@ void DisableInterrupt8195ASdio(PADAPTER padapter)
 	himr = cpu_to_le32(SDIO_HIMR_DISABLED);
 	sdio_local_write(padapter, SDIO_REG_HIMR, 4, (u8*)&himr);
 
+}
+
+u32 rtl8195es_hal_init(PADAPTER padapter){
+	InitInterrupt8195ASdio(padapter);
+	return _SUCCESS;
+}
+
+u32 rtl8195es_hal_deinit(PADAPTER padapter){
+
+	return _SUCCESS;
 }

@@ -173,13 +173,7 @@ _func_exit_;
 static void sd_sync_int_hdl(struct sdio_func *func)
 {
 	struct dvobj_priv *psdpriv;
-	PSDIO_DATA psdio;
 	psdpriv = sdio_get_drvdata(func);
-	psdio = &psdpriv->intf_data;
-	psdio->sdio_himr = (u32)(	\
-								SDIO_HIMR_RX_REQUEST_MSK | 
-								SDIO_HIMR_AVAL_MSK	|	
-								0);
 	rtw_sdio_set_irq_thd(psdpriv, current);
 	sd_int_hal(psdpriv->if1);
 	rtw_sdio_set_irq_thd(psdpriv, NULL);
@@ -315,7 +309,13 @@ _func_enter_;
 	mac_addr[4] = 0x00;
 	mac_addr[5] = 0x00;
 	_rtw_memcpy(pnetdev->dev_addr, mac_addr, ETH_ALEN);
-
+	
+	rtw_hal_disable_interrupt(padapter);
+	DBG_871X("bDriverStopped:%d, bSurpriseRemoved:%d, bup:%d\n"
+		,padapter->bDriverStopped
+		,padapter->bSurpriseRemoved
+		,padapter->bup
+	);
 	status = _SUCCESS;
 free_adapter:
 	if (status != _SUCCESS) {

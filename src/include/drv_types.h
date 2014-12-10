@@ -48,7 +48,12 @@ static struct device *dvobj_to_dev(struct dvobj_priv *dvobj)
 struct _ADAPTER
 {
 	_lock lock;
+	s32	bDriverStopped;
+	s32	bSurpriseRemoved;
+	int net_closed;	
+	u8 netif_up;
 #ifdef PLATFORM_LINUX
+	int bup;
 	_nic_hdl pnetdev;
 	struct net_device_stats stats;
 #endif

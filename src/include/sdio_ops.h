@@ -17,5 +17,7 @@ void sd_int_hal(PADAPTER padapter);
 void sdio_set_intf_ops(PADAPTER padapter,struct _io_ops *pops);
 void EnableInterrupt8195ASdio(PADAPTER padapter);
 void DisableInterrupt8195ASdio(PADAPTER padapter);
+u32 rtl8195es_hal_init(PADAPTER padapter);
+u32 rtl8195es_hal_deinit(PADAPTER padapter);
 /**************************************************/
 #endif

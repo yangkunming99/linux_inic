@@ -101,24 +101,54 @@ void rtw_stop_drv_threads (PADAPTER padapter)
 
 int netdev_open(struct net_device *pnetdev)
 {
-	int ret = 0;
+	uint status;
 	PADAPTER padapter = (PADAPTER)rtw_netdev_priv(pnetdev);
-	if(rtw_start_drv_threads(padapter) == _FAIL)
+	RT_TRACE(_module_os_intfs_c_,_drv_info_,("+871x_drv - dev_open\n"));
+	DBG_871X("+871x_drv - drv_open, bup=%d\n", padapter->bup);
+	padapter->netif_up = _TRUE;
+	if(padapter->bup == _FALSE)
 	{
-		rtw_os_indicate_disconnect(pnetdev);
-		return -ENOMEM;
+		status = rtw_hal_init(padapter);
+		if (status ==_FAIL)
+		{
+			RT_TRACE(_module_os_intfs_c_,_drv_err_,("rtw_hal_init(): Can't init h/w!\n"));
+			goto netdev_open_error;
+		}
+		if(rtw_start_drv_threads(padapter) == _FAIL)
+		{
+			RT_TRACE(_module_os_intfs_c_,_drv_err_,("rtw_start_drv_threads: failed h/w!\n"));
+			goto netdev_open_error;
+		}
+		if (padapter->intf_start)
+		{
+			padapter->intf_start(padapter);
+		}
+		padapter->bup = _TRUE;
 	}
-	if (padapter->intf_start)
-	{
-		padapter->intf_start(padapter);
-	}
-	return ret;
+	padapter->netif_up = _FALSE;
+	if(!rtw_netif_queue_stopped(pnetdev))
+		rtw_netif_start_queue(pnetdev);
+	else
+		rtw_netif_wake_queue(pnetdev);
+	
+	RT_TRACE(_module_os_intfs_c_,_drv_info_,("-871x_drv - dev_open\n"));
+	DBG_871X("-871x_drv - drv_open, bup=%d\n", padapter->bup);
+	return 0;
+netdev_open_error:
+	padapter->bup = _FALSE;
+	netif_carrier_off(pnetdev);
+	rtw_netif_stop_queue(pnetdev);
+	RT_TRACE(_module_os_intfs_c_,_drv_err_,("-871x_drv - dev_open, fail!\n"));
+	DBG_871X("-871x_drv - drv_open fail, bup=%d\n", padapter->bup);
+	return (-1);	
 }
 int netdev_close(struct net_device *pnetdev)
 {
 	int ret = 0;
 	PADAPTER padapter = (PADAPTER)rtw_netdev_priv(pnetdev);
-	DBG_871X("%s=======>\n", __FUNCTION__);
+	RT_TRACE(_module_os_intfs_c_,_drv_info_,("+871x_drv - drv_close\n"));
+	padapter->net_closed = _TRUE;
+	padapter->netif_up = _FALSE;
 	if(pnetdev)
 	{
 		if (!rtw_netif_queue_stopped(pnetdev))
@@ -126,6 +156,8 @@ int netdev_close(struct net_device *pnetdev)
 		netif_carrier_off(pnetdev);
 		rtw_stop_drv_threads(padapter);
 	}
+	RT_TRACE(_module_os_intfs_c_,_drv_info_,("-871x_drv - drv_close\n"));
+	DBG_871X("-871x_drv - drv_close, bup=%d\n", padapter->bup);
 	return ret;
 }
 static int rtw_net_set_mac_address(struct net_device *pnetdev, void *p)
