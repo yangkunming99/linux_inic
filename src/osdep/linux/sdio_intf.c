@@ -313,13 +313,13 @@ static int __devinit rtl8195a_init_one(struct sdio_func *func, const struct sdio
 	if ((dvobj = sdio_dvobj_init(func)) == NULL) {
 		goto exit;
 	}
-/*	
+	
 	// 2. init SDIO interface 
 	if ((padapter = rtw_sdio_if1_init(dvobj, id)) == NULL) {
 		DBG_871X("rtw_init_adapter Failed!\n");
 		goto free_dvobj;
 	}
-	
+#if 0	
 	// 2.dev_alloc_name && register_netdev
 	if((rtw_drv_register_netdev(padapter)) != _SUCCESS) {
 		goto free_adapter;
@@ -329,7 +329,7 @@ static int __devinit rtl8195a_init_one(struct sdio_func *func, const struct sdio
 	{
 		goto free_adapter;
 	}
-*/
+#endif
 	status = _SUCCESS;
 	
 free_adapter:
@@ -351,9 +351,11 @@ static void __devexit rtl8195a_remove_one(struct sdio_func *func)
 	PADAPTER padapter;
 	DBG_871X("%s():++\n", __FUNCTION__);
 	struct dvobj_priv *dvobj = sdio_get_drvdata(func);
-#if 0	
+	padapter = dvobj_priv->if1;
+	
 	if(padapter)
 	{	
+#if 0
 		rtw_drv_unregister_netdev(padapter);
 		/* test surprise remove */
 		sdio_claim_host(func);
@@ -362,9 +364,10 @@ static void __devexit rtl8195a_remove_one(struct sdio_func *func)
 		if (err == -ENOMEDIUM) {
 			DBG_871X(KERN_NOTICE "%s: device had been removed!\n", __func__);
 		}
+#endif
 		rtw_sdio_if1_deinit(padapter);
 	}
-#endif
+
 	sdio_dvobj_deinit(func);
 }
 
