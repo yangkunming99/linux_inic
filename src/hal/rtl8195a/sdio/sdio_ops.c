@@ -1,7 +1,7 @@
-#include "../../../include/rtw_debug.h"
-#include "../../../include/sdio_ops.h"
-#include "../../../include/8195_sdio_reg.h"
-#include "../../../include/sdio_ops_linux.h"
+#include "rtw_debug.h"
+#include "sdio_ops.h"
+#include "8195_sdio_reg.h"
+#include "sdio_ops_linux.h"
 //
 // Description:
 //	The following mapping is for SDIO host local register space.
@@ -236,7 +236,7 @@ u32 sdio_read_port(
 	u8 *mem)
 {
 	s32 err;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 //	printk("%s(): addr is %d\n", __func__, addr);
 //	printk("%s(): SDIORxFIFOCnt is %d\n", __func__, padapter->SdioRxFIFOCnt);
 	HalSdioGetCmdAddr8195ASdio(padapter, addr, psdio->SdioRxFIFOCnt++, &addr);
@@ -416,7 +416,7 @@ u32 sdio_write_port(
 {
 
 	s32 err;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 	cnt = _RND4(cnt);
 
 	HalSdioGetCmdAddr8195ASdio(padapter, addr, cnt >> 2, &addr);
@@ -445,7 +445,7 @@ s32 _sdio_local_read(
 	s32 err;
 	u8 *ptmpbuf;
 	u32 n;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 	HalSdioGetCmdAddr8195ASdio(padapter, SDIO_LOCAL_DEVICE_ID, addr, &addr);
 
 #if 0
@@ -514,7 +514,7 @@ s32 _sdio_local_write(
 
 	s32 err;
 	u8 *ptmpbuf;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 	if(addr & 0x3)
 		DBG_871X("%s, address must be 4 bytes alignment\n", __FUNCTION__);
 
@@ -607,7 +607,7 @@ static struct recv_buf* sd_recv_rxfifo(PADAPTER padapter, u32 size)
 	struct sk_buff  *ppkt;
 	struct recv_priv *precvpriv;
 	struct recv_buf	*precvbuf;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 
 	readsize = size;
 
@@ -648,7 +648,7 @@ static struct recv_buf* sd_recv_rxfifo(PADAPTER padapter, u32 size)
 void sd_int_dpc(PADAPTER padapter)
 {
 	//struct sk_buff *skb;
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 	struct recv_buf *precvbuf;
 	if (psdio->sdio_hisr & SDIO_HISR_RX_REQUEST)
 	{
@@ -686,7 +686,7 @@ void sd_int_dpc(PADAPTER padapter)
 void sd_int_hal(PADAPTER padapter)
 {
 	u8 data[6];
-	PSDIO_DATA psdio = &padapter->intf_data;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 	//read directly from SDIO_HISR(32bits) and SDIO_RX0_REQ_LEN(0~23), but 16bits are enough
 	_sdio_local_read(padapter, SDIO_HISR, 6, data); 
 	psdio->sdio_hisr = le32_to_cpu(*(u32*)data);

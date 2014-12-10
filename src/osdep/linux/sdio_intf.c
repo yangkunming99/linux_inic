@@ -29,19 +29,22 @@
 #include <linux/sched.h>
 #include <linux/kthread.h>
 #include <linux/errno.h>
-#include "../../include/autoconf.h"
-#include "../../include/rtw_debug.h"
-#include "../../include/sdio_ops.h"
-#include "../../include/8195_desc.h"
-#include "../../include/8195_sdio_reg.h"
-#include "../../include/rtl8195a.h"
-#include "../../include/osdep_service.h"
-#include "../../include/sdio_ops_linux.h"
-#include "../../include/rtw_ioctl.h"
-#include "../../include/rtw_xmit.h"
-#include "../../include/rtw_recv.h"
-#include "../../include/rtw_io.h"
-#include "../../include/rtw_cmd.h"
+#include "autoconf.h"
+#include "rtw_debug.h"
+#include "sdio_ops.h"
+#include "rtl8195a_hal_ops.h"
+#include "8195_desc.h"
+#include "8195_sdio_reg.h"
+#include "rtl8195a.h"
+#include "osdep_service.h"
+#include "osdep_intf.h"
+
+#include "sdio_ops_linux.h"
+#include "rtw_ioctl.h"
+#include "rtw_xmit.h"
+#include "rtw_recv.h"
+#include "rtw_io.h"
+#include "rtw_cmd.h"
 MODULE_AUTHOR("Realtek");
 MODULE_DESCRIPTION("RealTek RTL-8195a iNIC");
 MODULE_LICENSE("GPL");
@@ -53,83 +56,187 @@ MODULE_VERSION(RTL8195_VERSION);
 struct timeval time_out;
 struct timeval time_back;
 #endif
+static u32 sdio_init(struct dvobj_priv *dvobj)
+{
+	PSDIO_DATA psdio_data;
+	struct sdio_func *func;
+	int err;
+
+_func_enter_;
+
+	psdio_data = &dvobj->intf_data;
+	func = psdio_data->func;
+
+	//3 1. init SDIO bus
+	sdio_claim_host(func);
+
+	err = sdio_enable_func(func);
+	if (err) {
+		DBG_871X(KERN_CRIT "%s: sdio_enable_func FAIL(%d)!\n", __func__, err);
+		goto release;
+	}
+
+	err = sdio_set_block_size(func, 512);
+	if (err) {
+		DBG_871X(KERN_CRIT "%s: sdio_set_block_size FAIL(%d)!\n", __func__, err);
+		goto release;
+	}
+	psdio_data->block_transfer_len = 512;
+	psdio_data->tx_block_mode = 1;
+	psdio_data->rx_block_mode = 1;
+
+release:
+	sdio_release_host(func);
+
+_func_exit_;
+	if (err) return _FAIL;
+	return _SUCCESS;
+}
+static void sdio_deinit(struct dvobj_priv *dvobj)
+{
+	struct sdio_func *func;
+	int err;
+
+	func = dvobj->intf_data.func;
+
+	if (func) {
+		sdio_claim_host(func);
+		err = sdio_disable_func(func);
+		if (err)
+		{
+			DBG_871X(KERN_ERR "%s: sdio_disable_func(%d)\n", __func__, err);
+		}
+
+		if (dvobj->irq_alloc) {
+			err = sdio_release_irq(func);
+			if (err)
+			{
+				DBG_871X(KERN_ERR "%s: sdio_release_irq(%d)\n", __func__, err);
+			}
+		}
+
+		sdio_release_host(func);
+	}
+}
+
+static struct dvobj_priv *sdio_dvobj_init(struct sdio_func *func)
+{
+	int status = _FAIL;
+	struct dvobj_priv *dvobj = NULL;
+	PSDIO_DATA psdio;
+_func_enter_;
+
+	if((dvobj = devobj_init()) == NULL) {
+		goto exit;
+	}
+
+	sdio_set_drvdata(func, dvobj);
+	psdio = &dvobj->intf_data;
+	psdio->func = func;
+	psdio->SdioRxFIFOCnt = 0;	
+	if (sdio_init(dvobj) != _SUCCESS) {
+		RT_TRACE(_module_hci_intfs_c_, _drv_err_, ("%s: initialize SDIO Failed!\n", __FUNCTION__));
+		goto free_dvobj;
+	}
+	rtw_reset_continual_io_error(dvobj);
+	status = _SUCCESS;
+
+free_dvobj:
+	if (status != _SUCCESS && dvobj) {
+		sdio_set_drvdata(func, NULL);
+		
+		devobj_deinit(dvobj);
+		
+		dvobj = NULL;
+	}
+exit:
+_func_exit_;
+	return dvobj;
+}
+
+static void sdio_dvobj_deinit(struct sdio_func *func)
+{
+	struct dvobj_priv *dvobj = sdio_get_drvdata(func);
+_func_enter_;
+
+	sdio_set_drvdata(func, NULL);
+	if (dvobj) {
+		sdio_deinit(dvobj);
+		devobj_deinit(dvobj);
+	}
+
+_func_exit_;
+	return;
+}
+
 
 static void sd_sync_int_hdl(struct sdio_func *func)
 {
-	PADAPTER padapter = sdio_get_drvdata(func);
-	PSDIO_DATA psdio = &padapter->intf_data;
+	struct dvobj_priv *psdpriv;
+	PSDIO_DATA psdio;
+	psdpriv = sdio_get_drvdata(func);
+	psdio = &psdpriv->intf_data;
 	psdio->sdio_himr = (u32)(	\
 								SDIO_HIMR_RX_REQUEST_MSK | 
 								SDIO_HIMR_AVAL_MSK	|	
 								0);
-	rtw_sdio_set_irq_thd(padapter, current);
-	sd_int_hal(padapter);
-	rtw_sdio_set_irq_thd(padapter, NULL);
+	rtw_sdio_set_irq_thd(psdpriv, current);
+	sd_int_hal(psdpriv->if1);
+	rtw_sdio_set_irq_thd(psdpriv, NULL);
 }
 
-int sdio_alloc_irq(struct sdio_func *func)
+int sdio_alloc_irq(struct dvobj_priv *dvobj)
 {
+	PSDIO_DATA psdio_data;
+	struct sdio_func *func;
 	int err;
+
+	psdio_data = &dvobj->intf_data;
+	func = psdio_data->func;
+
 	sdio_claim_host(func);
+
 	err = sdio_claim_irq(func, &sd_sync_int_hdl);
-	if(err)
+	if (err)
 	{
-		DBG_871X(KERN_CRIT "%s(): sdio_claim_irq FAIL(%d)!\n", __FUNCTION__, err);
+		//dvobj->drv_dbg.dbg_sdio_alloc_irq_error_cnt++;
+		printk(KERN_CRIT "%s: sdio_claim_irq FAIL(%d)!\n", __func__, err);
 	}
+	else
+	{
+		//dvobj->drv_dbg.dbg_sdio_alloc_irq_cnt++;
+		dvobj->irq_alloc = 1;
+	}
+
 	sdio_release_host(func);
 
 	return err?_FAIL:_SUCCESS;
 }
-void sdio_free_irq(struct sdio_func *func)
-{
-	int err;
-	if(func)
-	{
-		sdio_claim_host(func);
-		err = sdio_release_irq(func);
-		if(err)
-		{			
-			DBG_871X("%s: sdio_release_irq FAIL(%d)!\n", __func__, err);
-		}
-		sdio_release_host(func);
-	}
-}
-static int sdio_init(struct sdio_func *func)
-{
-	int rc = 0;
 
-	DBG_871X("%s():\n", __FUNCTION__);
-_func_enter_;
-	sdio_claim_host(func);
-	rc = sdio_enable_func(func);
-	if(rc ){
-		DBG_871X("%s():sdio_enable_func FAIL!\n",__FUNCTION__);
-		goto release;
-	}
-	rc = sdio_set_block_size(func, 512);
-	if(rc ){
-		DBG_871X("%s():sdio_set_block_size FAIL!\n",__FUNCTION__);
-		goto release;
-	}
-release:
-    sdio_release_host(func);
-
-_func_exit_;
-
-	return rc;   
-}
-static void sdio_deinit(struct sdio_func *func)
+void sdio_free_irq(struct dvobj_priv *dvobj)
 {
-	int rc;
-	if(func)
-	{
-		sdio_claim_host(func);
-		rc = sdio_disable_func(func);
-		if(rc){
-			DBG_871X("%s(): sdio_disable_func fail!\n", __FUNCTION__);
-		}
-		sdio_release_host(func);		
-	}
+    PSDIO_DATA psdio_data;
+    struct sdio_func *func;
+    int err;
+
+    if (dvobj->irq_alloc) {
+        psdio_data = &dvobj->intf_data;
+        func = psdio_data->func;
+
+        if (func) {
+            sdio_claim_host(func);
+            err = sdio_release_irq(func);
+            if (err)
+            {
+				//dvobj->drv_dbg.dbg_sdio_free_irq_error_cnt++;
+				DBG_871X("%s: sdio_release_irq FAIL(%d)!\n", __func__, err);
+            }
+            else
+            	//dvobj->drv_dbg.dbg_sdio_free_irq_cnt++;
+            sdio_release_host(func);
+        }
+        dvobj->irq_alloc = 0;
+    }
 }
 
 
@@ -138,20 +245,22 @@ void rtw_set_hal_ops(PADAPTER padapter)
 	rtl8195a_set_hal_ops(padapter);
 }
 
-_adapter *rtw_sdio_if1_init(struct sdio_func *func, const struct sdio_device_id  *pdid){
+_adapter *rtw_sdio_if1_init(struct dvobj_priv *dvobj, const struct sdio_device_id  *pdid){
 	int status = _FAIL;
 	struct net_device *pnetdev;
 	PADAPTER padapter = NULL;
-	PSDIO_DATA psdio;
 	u8 mac_addr[ETH_ALEN];
 	if ((padapter = (_adapter *)rtw_zvmalloc(sizeof(*padapter))) == NULL) {
 		goto exit;
 	}
+	padapter->dvobj = dvobj;
+	dvobj->if1 = padapter;
+	padapter->interface_type = RTW_SDIO;
 	//3 1. init network device data
 	pnetdev = rtw_init_netdev(padapter);
 	if (!pnetdev)
 		goto free_adapter;
-	SET_NETDEV_DEV(pnetdev, &func->dev);
+	SET_NETDEV_DEV(pnetdev, dvobj_to_dev(dvobj));
 	padapter = rtw_netdev_priv(pnetdev);
 	//3 3. init driver special setting, interface, OS and hardware relative
 	rtw_set_hal_ops(padapter);
@@ -171,11 +280,6 @@ _adapter *rtw_sdio_if1_init(struct sdio_func *func, const struct sdio_device_id 
 	mac_addr[4] = 0x00;
 	mac_addr[5] = 0x00;
 	_rtw_memcpy(pnetdev->dev_addr, mac_addr, ETH_ALEN);
-
-	psdio = &padapter->intf_data;
-	psdio->func= func;
-	psdio->SdioRxFIFOCnt = 0;	
-	sdio_set_drvdata(func, padapter);
 	
 free_adapter:
 	if (status != _SUCCESS) {
@@ -192,70 +296,57 @@ exit:
 static void rtw_sdio_if1_deinit(_adapter *if1)
 {
 	struct net_device *pnetdev = if1->pnetdev;
-	PSDIO_DATA psdio = if1->intf_data;
-	struct sdio_func *func = psdio->func;
 	rtw_free_drv_sw(if1);
 	if(pnetdev)
 		rtw_free_netdev(pnetdev);
-	sdio_set_drvdata(func, NULL);
 }
 static int __devinit rtl8195a_init_one(struct sdio_func *func, const struct sdio_device_id *id)
 {
-	struct net_device *pnetdev;
+	int status = _FAIL;
 	PADAPTER padapter;
-
-	int rc = 0;
+	struct dvobj_priv *dvobj;
 
 	DBG_871X("%s():++\n",__FUNCTION__);
 	DBG_871X("+rtw_drv_init: vendor=0x%04x device=0x%04x class=0x%02x\n", func->vendor, func->device, func->class);
 	
 	
-	// 1.init SDIO bus and read chip version	
-	rc = sdio_init(func);
-	if(rc)
+	if ((dvobj = sdio_dvobj_init(func)) == NULL) {
 		goto exit;
+	}
 	
 	// 2. init SDIO interface 
-	if ((padapter = rtw_sdio_if1_init(func, id)) == NULL) {
+	if ((padapter = rtw_sdio_if1_init(dvobj, id)) == NULL) {
 		DBG_871X("rtw_init_adapter Failed!\n");
-		rc = -ENODEV;
-		goto free_sdio;
+		goto free_dvobj;
 	}
 	
 	// 2.dev_alloc_name && register_netdev
 	if((rtw_drv_register_netdev(padapter)) != _SUCCESS) {
-		rc = -ENODEV;
 		goto free_adapter;
 	}	
 
-	if (sdio_alloc_irq(func) != _SUCCESS)
+	if (sdio_alloc_irq(dvobj) != _SUCCESS)
 	{
-		rc = -ENODEV;
-		goto free_netdev;
+		goto free_adapter;
 	}
-
-	goto exit;
-free_netdev:
-	rtw_drv_unregister_netdev(padapter);
+	status = _SUCCESS;
 	
 free_adapter:
-	rtw_sdio_if1_deinit(padapter);
-	
-free_sdio:
-	sdio_deinit(func);
+	if (status != _SUCCESS && padapter) {
+		rtw_sdio_if1_deinit(padapter);
+	}	
+free_dvobj:
+	if (status != _SUCCESS)
+		sdio_dvobj_deinit(func);
 	
 exit:
-	
-	return rc;
+	return status == _SUCCESS?0:-ENODEV;
 }
 
 static void __devexit rtl8195a_remove_one(struct sdio_func *func)
 
 {
-
-	int rc = 0;
 	int err;
-	struct net_device *pnetdev;
 	PADAPTER padapter;
 	DBG_871X("%s():++\n", __FUNCTION__);
 	padapter = sdio_get_drvdata(func);
@@ -272,16 +363,7 @@ static void __devexit rtl8195a_remove_one(struct sdio_func *func)
 		}
 		rtw_sdio_if1_deinit(padapter);
 	}
-	sdio_claim_host(func);
-	rc = sdio_disable_func(func);
-	if(rc){
-		DBG_871X("%s(): sdio_disable_func fail!\n", __FUNCTION__);
-	}
-	rc = sdio_release_irq(func);
-	if(rc){
-		DBG_871X("%s(): sdio_disable_irq fail!\n", __FUNCTION__);
-	}	
-	sdio_release_host(func);
+	sdio_dvobj_deinit(func);
 }
 
 

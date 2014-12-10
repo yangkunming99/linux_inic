@@ -22,10 +22,4 @@
 #ifndef CONFIG_SDIO_HCI
 #error "CONFIG_SDIO_HCI shall be on!\n"
 #endif
-void rtl8195a_set_hal_ops(PADAPTER padapter)
-{
-	struct hal_ops *pHalFunc = &padapter->HalFunc;
-	pHalFunc->hal_xmit = &rtl8195a_hal_xmit;
-	pHalFunc->hal_mgnt_xmit = &rtl8195a_hal_mgnt_xmit;
-	pHalFunc->xmit_thread_handler = &rtl8195a_hal_xmit_handler;
-}
+

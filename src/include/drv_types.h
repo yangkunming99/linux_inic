@@ -1,25 +1,24 @@
 #ifndef __DRV_TYPES_H__
 #define __DRV_TYPES_H__
-
+#include "autoconf.h"
 #include "osdep_service.h"
 #include "8195_desc.h"
+
 typedef struct _ADAPTER _adapter,ADAPTER,*PADAPTER;
 typedef struct _AT_CMD_DESC AT_CMD_DESC, *PAT_CMD_DESC;
-#include "rtw_xmit.h"
-#include "rtw_recv.h"
-#include "rtw_io.h"
-#include "rtw_cmd.h"
-#include "hal_intf.h"
+
+
 #ifdef CONFIG_SDIO_HCI
 #include "drv_types_sdio.h"
 #define INTF_DATA SDIO_DATA
-#elif CONFIG_USB_HCI
+#elif defined(CONFIG_USB_HCI)
 #include "drv_types_usb.h"
 #define INTF_DATA USB_DATA *
 #endif
 
 struct dvobj_priv
 {
+	_lock lock;
 	/*-------- below is common data --------*/	
 	_adapter *if1; //PRIMARY_ADAPTER
 	u8	irq_alloc;
@@ -29,7 +28,8 @@ struct dvobj_priv
 #ifdef INTF_DATA
 	INTF_DATA intf_data;
 #endif
-}
+};
+
 #ifdef PLATFORM_LINUX
 static struct device *dvobj_to_dev(struct dvobj_priv *dvobj)
 {
@@ -42,6 +42,11 @@ static struct device *dvobj_to_dev(struct dvobj_priv *dvobj)
 }
 #endif
 
+#include "rtw_xmit.h"
+#include "rtw_recv.h"
+#include "rtw_cmd.h"
+#include "hal_intf.h"
+#include "rtw_io.h"
 struct _ADAPTER
 {
 	_lock lock;

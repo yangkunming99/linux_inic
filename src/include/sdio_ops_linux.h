@@ -3,7 +3,7 @@
 #include "basic_types.h"
 #include <linux/mmc/sdio_func.h>
 #include "drv_types.h"
-inline void rtw_sdio_set_irq_thd(PADAPTER padapter, void *thd_hdl);
+inline void rtw_sdio_set_irq_thd(struct dvobj_priv *dvobj, _thread_hdl_ thd_hdl);
 s32 _sd_cmd52_read(struct sdio_func *func, u32 addr, u32 cnt, u8 *pdata);
 s32 sd_cmd52_read(PADAPTER padapter, u32 addr, u32 cnt, u8 *pdata);
 s32 _sd_cmd52_write(PADAPTER padapter, u32 addr, u32 cnt, u8 *pdata);

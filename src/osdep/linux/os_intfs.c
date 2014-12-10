@@ -1,3 +1,31 @@
+
+struct dvobj_priv *devobj_init(void)
+{
+	struct dvobj_priv *pdvobj = NULL;
+
+	if ((pdvobj = (struct dvobj_priv*)rtw_zmalloc(sizeof(*pdvobj))) == NULL) 
+	{
+		return NULL;
+	}
+
+	_rtw_spinlock_init(&pdvobj->lock);
+
+	return pdvobj;
+
+}
+
+void devobj_deinit(struct dvobj_priv *pdvobj)
+{
+	if(!pdvobj)
+		return;
+
+	_rtw_spinlock_free(&pdvobj->lock);
+
+	rtw_mfree((u8*)pdvobj, sizeof(*pdvobj));
+}	
+
+
+
 #if 0
 static const struct ethtool_ops rtl8195a_ethtool_ops = {
 	.get_settings		= rtw_get_settings,

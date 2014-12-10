@@ -189,12 +189,6 @@ static void rtw_recv_entry(PADAPTER padapter, struct sk_buff *skb)
 			rtw_os_indicate_disconnect(pnetdev);
 			return;
 		}
-		
-	_enter_critical_bh(&gDataBuf.lock, &irqL);
-		memset(gDataBuf.buf, 0, sizeof(gDataBuf.buf));
-		_rtw_memcpy(gDataBuf.buf, skb->data, atcmddesc.pktsize);
-		gDataBuf.buf_size = atcmddesc.pktsize;
-	_exit_critical_bh(&gDataBuf.lock, &irqL);
 		_rtw_skb_free(skb);		
 	}
 	else

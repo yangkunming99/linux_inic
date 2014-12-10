@@ -1,11 +1,12 @@
-#include "../include/autoconf.h"
-#include "../include/rtw_debug.h"
-#include "../include/drv_types.h"
-#include "../include/rtw_xmit.h"
-#include "../include/rtw_ioctl.h"
-#include "../include/8195_desc.h"
-#include "../include/8195_sdio_reg.h"
-#include "../include/sdio_ops.h"
+#include "autoconf.h"
+#include "rtw_debug.h"
+#include "drv_types.h"
+#include "rtw_xmit.h"
+#include "rtw_ioctl.h"
+#include "8195_desc.h"
+#include "8195_sdio_reg.h"
+#include "sdio_ops.h"
+#include "hal_intf.h"
 
 void rtw_sctx_init(struct submit_ctx *sctx, int timeout_ms)
 {
@@ -234,11 +235,13 @@ thread_return rtw_xmit_thread(void *context)
 {
 	s32 err;
 	PADAPTER padapter;
+	struct xmit_priv *pxmitpriv;
 	padapter = (PADAPTER)context;
+	pxmitpriv = &padapter->xmitpriv;
 	thread_enter("RTW_XMIT_THREAD");
 	do{
 		err = rtw_hal_xmit_thread_handler(padapter);
 		flush_signals_thread();
-	}while((_SUCCESS == err)&&(padapter->xmitpriv->xmitThread));
+	}while((_SUCCESS == err)&&(pxmitpriv->xmitThread));
 	thread_exit();
 }

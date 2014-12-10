@@ -1,9 +1,7 @@
 #ifndef __SDIO_IO_H__
 #define __SDIO_IO_H__
 /***************************************************/
-
 #include "basic_types.h"
-#include <linux/mmc/sdio_func.h>
 #include "drv_types.h"
 #include "rtw_io.h"
 u8 sdio_read8(PADAPTER padapter, u32 addr);

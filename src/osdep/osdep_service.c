@@ -989,7 +989,7 @@ struct net_device *rtw_alloc_etherdev(int sizeof_priv)
 	
 	pnpi = netdev_priv(pnetdev);
 	
-	pnpi->priv = rtw_zmalloc(sizeof_priv);
+	pnpi->priv = rtw_zvmalloc(sizeof_priv);
 	if (!pnpi->priv) {
 		free_netdev(pnetdev);
 		pnetdev = NULL;

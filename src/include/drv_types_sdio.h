@@ -51,7 +51,11 @@ typedef struct sdio_data
 	u32			sdio_hisr;
 	u8			SdioRxFIFOCnt;
 	u16			SdioRxFIFOSize;
-
+	
+	u8  func_number;
+	u8  tx_block_mode;
+	u8  rx_block_mode;
+	u32 block_transfer_len;
 #ifdef PLATFORM_LINUX
 	struct sdio_func	 *func;
 	_thread_hdl_ sys_sdio_irq_thd;

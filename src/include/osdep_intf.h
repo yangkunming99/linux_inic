@@ -20,7 +20,10 @@
 
 #ifndef __OSDEP_INTF_H_
 #define __OSDEP_INTF_H_
-
+struct dvobj_priv *devobj_init(void);
+void devobj_deinit(struct dvobj_priv *pdvobj);
+u8 rtw_init_drv_sw(_adapter *padapter);
+u8 rtw_free_drv_sw(_adapter *padapter);
 u32 rtw_start_drv_threads(_adapter *padapter);
 void rtw_stop_drv_threads (_adapter *padapter);
 #ifdef PLATFORM_LINUX

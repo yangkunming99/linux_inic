@@ -205,12 +205,14 @@ int rtw_cmd_thread(void *context)
 {
 	s32 err;
 	PADAPTER padapter;
+	struct cmd_priv *pcmdpriv;
 	//DBG_871X("%s=======>\n", __FUNCTION__);
 	padapter = (PADAPTER)context;
+	pcmdpriv = &padapter->cmdpriv;
 	thread_enter("RTW_CMD_THREAD");
 	do{
 		err = rtw_cmd_handler(padapter);
 		flush_signals_thread();
-	}while((_SUCCESS == err)&&(padapter->cmdpriv->cmdThread));
+	}while((_SUCCESS == err)&&(pcmdpriv->cmdThread));
 	thread_exit();
 }

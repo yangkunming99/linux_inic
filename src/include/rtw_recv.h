@@ -15,6 +15,7 @@ struct recv_priv
 #else
 	struct tasklet_struct recv_tasklet;
 #endif
+#endif
 	u32 free_recv_buf_queue_cnt;
 	_queue free_recv_buf_queue;
 	_queue recv_buf_pending_queue;

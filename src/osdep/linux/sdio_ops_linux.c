@@ -12,10 +12,10 @@ static bool rtw_sdio_claim_host_needed(struct sdio_func *func)
 	return _TRUE;
 }
 
-inline void rtw_sdio_set_irq_thd(PADAPTER padapter, void *thd_hdl)
+inline void rtw_sdio_set_irq_thd(struct dvobj_priv *dvobj, _thread_hdl_ thd_hdl)
 {
-	PSDIO_DATA psdio = &padapter->intf_data;
-	psdio->sys_sdio_irq_thd = thd_hdl;
+	PSDIO_DATA sdio_data = &dvobj->intf_data;
+	sdio_data->sys_sdio_irq_thd = thd_hdl;
 }
 
 /*
