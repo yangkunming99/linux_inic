@@ -159,35 +159,6 @@ _func_exit_;
 	return obj;
 }
 
-s32 rtw_cmd_dequeue_writeport(PADAPTER padapter)
-{
-	struct cmd_obj *pcmdobj;
-	u16 len = 0;
-	PTXDESC_8195A ptxdesc;
-	PAT_CMD_DESC patcmddesc;
-	struct cmd_priv *pcmdpriv = &padapter->cmdpriv;
-
-	pcmdobj = rtw_dequeue_cmd(&pcmdpriv->cmd_queue);
-	if(pcmdobj == NULL)
-		return _TRUE;
-	len = SIZE_TX_DESC_8195a + SIZE_AT_CMD_DESC + pcmdobj->cmdsz;
-	ptxdesc = (PTXDESC_8195A)pcmdpriv->cmd_buf;
-	ptxdesc->txpktsize = SIZE_AT_CMD_DESC + pcmdobj->cmdsz;
-	ptxdesc->offset = SIZE_TX_DESC_8195a;
-	patcmddesc = (PAT_CMD_DESC)(pcmdpriv->cmd_buf + SIZE_TX_DESC_8195a);
-	patcmddesc->datatype = MNGMT_FRAME;
-	patcmddesc->offset = SIZE_AT_CMD_DESC;
-	patcmddesc->pktsize = pcmdobj->cmdsz;
-	
-	if(pcmdobj->parmbuf)
-	{
-		_rtw_memcpy(pcmdpriv->cmd_buf+SIZE_TX_DESC_8195a+SIZE_AT_CMD_DESC, pcmdobj->parmbuf, pcmdobj->cmdsz);
-	}
-	rtw_write_port(padapter, WLAN_TX_FIFO_DEVICE_ID, len, pcmdpriv->cmd_buf);
-	rtw_free_cmd_obj(pcmdobj);
-	return _FAIL;
-}
-
 s32 rtw_cmd_handler(PADAPTER padapter)
 {
 	s32 ret;
@@ -197,7 +168,7 @@ s32 rtw_cmd_handler(PADAPTER padapter)
 	if(ret == _FAIL)
 		return _FAIL;
 	do{
-	is_queue_empty=rtw_cmd_dequeue_writeport(padapter);
+	is_queue_empty = _SUCCESS;//todo for cmd handler
 	}while(!is_queue_empty);
 	return _SUCCESS;
 }
@@ -207,7 +178,7 @@ int rtw_cmd_thread(void *context)
 	s32 err;
 	PADAPTER padapter;
 	struct cmd_priv *pcmdpriv;
-	//DBG_871X("%s=======>\n", __FUNCTION__);
+
 	padapter = (PADAPTER)context;
 	pcmdpriv = &padapter->cmdpriv;
 	thread_enter("RTW_CMD_THREAD");

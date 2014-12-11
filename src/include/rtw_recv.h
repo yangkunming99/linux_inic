@@ -1,6 +1,8 @@
 #ifndef __RTW_RECV_H__
 #define __RTW_RECV_H__
-#include "sdio_ops.h"
+
+#include "drv_types.h"
+//#include "sdio_ops.h"
 
 #define NR_RECVBUFF (128)
 struct recv_priv
@@ -29,7 +31,13 @@ struct recv_buf
 	_list list;
 	PADAPTER adapter;
 	u32	len;
+	u8	*phead;
+	u8	*pdata;
+	u8	*ptail;
+	u8	*pend;
+#ifdef PLATFORM_LINUX
 	_pkt *pskb;
+#endif
 };
 s32 rtw_init_recv_priv(PADAPTER padapter);
 void rtw_free_recv_priv(PADAPTER padapter);

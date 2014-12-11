@@ -604,7 +604,7 @@ static struct recv_buf* sd_recv_rxfifo(PADAPTER padapter, u32 size)
 {
 	u32 readsize, allocsize, ret;
 	u8 *preadbuf;
-	struct sk_buff  *ppkt;
+	_pkt *ppkt;
 	struct recv_priv *precvpriv;
 	struct recv_buf	*precvbuf;
 	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
@@ -641,7 +641,11 @@ static struct recv_buf* sd_recv_rxfifo(PADAPTER padapter, u32 size)
 	//3 4. init recvbuf
 	precvbuf->pskb = ppkt;
 	precvbuf->len = ppkt->len;
-
+	precvbuf->phead = ppkt->head;
+	precvbuf->pdata = ppkt->data;
+	precvbuf->ptail = skb_tail_pointer(precvbuf->pskb);
+	precvbuf->pend = skb_end_pointer(precvbuf->pskb);
+	
 	return precvbuf;
 }
 
@@ -799,12 +803,3 @@ void DisableInterrupt8195ASdio(PADAPTER padapter)
 
 }
 
-u32 rtl8195es_hal_init(PADAPTER padapter){
-	InitInterrupt8195ASdio(padapter);
-	return _SUCCESS;
-}
-
-u32 rtl8195es_hal_deinit(PADAPTER padapter){
-
-	return _SUCCESS;
-}

@@ -4,6 +4,16 @@
 #include "8195_sdio_reg.h"
 #include "rtw_xmit.h"
 #include "rtl8195a_xmit.h"
+s32 rtl8195as_init_xmit_priv(PADAPTER padapter)
+{
+	s32 res = _SUCCESS;
+	return res;
+}
+
+void rtl8195as_free_xmit_priv(PADAPTER padapter)
+{
+
+}
 s32 rtl8195as_dequeue_writeport(PADAPTER padapter)
 {
 	struct xmit_buf *pxmitbuf;

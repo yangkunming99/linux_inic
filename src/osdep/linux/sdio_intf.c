@@ -32,12 +32,13 @@
 #include "autoconf.h"
 #include "rtw_debug.h"
 #include "sdio_ops.h"
-#include "rtl8195a_hal_ops.h"
+#include "hal_intf.h"
 #include "8195_desc.h"
 #include "8195_sdio_reg.h"
 #include "rtl8195a.h"
 #include "osdep_service.h"
 #include "osdep_intf.h"
+#include "sdio_hal.h"
 #include "sdio_ops_linux.h"
 #include "rtw_ioctl.h"
 #include "rtw_xmit.h"
@@ -236,7 +237,7 @@ void sdio_free_irq(struct dvobj_priv *dvobj)
 
 void rtw_set_hal_ops(PADAPTER padapter)
 {
-	rtl8195a_set_hal_ops(padapter);
+	rtl8195as_set_hal_ops(padapter);
 }
 
 static void sd_intf_start(PADAPTER padapter)

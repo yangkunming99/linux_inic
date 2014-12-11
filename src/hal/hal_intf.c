@@ -21,6 +21,33 @@
 #define _HAL_INTF_C_
 #include "drv_types.h"
 #include "hal_intf.h"
+
+s32	rtw_hal_init_xmit_priv(_adapter *padapter)
+{	
+	if(padapter->HalFunc.init_xmit_priv)
+		return padapter->HalFunc.init_xmit_priv(padapter);
+
+	return _FAIL;
+}
+void	rtw_hal_free_xmit_priv(_adapter *padapter)
+{
+	
+	if(padapter->HalFunc.free_xmit_priv)
+		padapter->HalFunc.free_xmit_priv(padapter);
+}
+s32	rtw_hal_init_recv_priv(_adapter *padapter)
+{	
+	if(padapter->HalFunc.init_recv_priv)
+		return padapter->HalFunc.init_recv_priv(padapter);
+
+	return _FAIL;
+}
+void	rtw_hal_free_recv_priv(_adapter *padapter)
+{
+	
+	if(padapter->HalFunc.free_recv_priv)
+		padapter->HalFunc.free_recv_priv(padapter);
+}
 uint	 rtw_hal_init(_adapter *padapter) 
 {
 	if(padapter->HalFunc.hal_init)
