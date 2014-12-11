@@ -35,5 +35,7 @@ int rtw_inc_and_chk_continual_io_error(struct dvobj_priv *dvobj);
 void rtw_reset_continual_io_error(struct dvobj_priv *dvobj);
 u32 rtw_write_port(PADAPTER padapter, u32 addr, u32 cnt, u8 *pmem);
 void rtw_write_port_cancel(_adapter *adapter);
+u32 rtw_read_port(_adapter *adapter, u32 addr, u32 cnt, u8 *pmem);
+void rtw_read_port_cancel(_adapter *adapter);
 
 #endif
