@@ -27,7 +27,7 @@ int _rtw_xmit_entry(_pkt *pkt, _nic_hdl pnetdev)
 	struct xmit_buf *pxmitbuf;
 	struct xmit_priv *pxmitpriv;
 	//_irqL irqL;
-
+_func_enter_;
 	padapter = (PADAPTER)rtw_netdev_priv(pnetdev);
 	pxmitpriv = &padapter->xmitpriv;
 #ifdef GET_SYS_TIME

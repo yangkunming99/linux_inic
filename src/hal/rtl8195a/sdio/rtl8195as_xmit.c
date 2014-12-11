@@ -17,12 +17,13 @@ void rtl8195as_free_xmit_priv(PADAPTER padapter)
 s32 rtl8195as_dequeue_writeport(PADAPTER padapter)
 {
 	struct xmit_buf *pxmitbuf;
-
+_func_enter_;
 	pxmitbuf = rtw_dequeue_xmitbuf(padapter);
 	if(pxmitbuf == NULL)
 		return _TRUE;
 	rtw_write_port(padapter, WLAN_TX_FIFO_DEVICE_ID, pxmitbuf->pkt_len, pxmitbuf->pdata);
 	rtw_free_xmitbuf(padapter, pxmitbuf);
+_func_exit_;
 	return _FAIL;
 }
 s32 rtl8195as_hal_xmit_handler(PADAPTER padapter)
@@ -51,6 +52,7 @@ s32 rtl8195as_hal_xmit(PADAPTER padapter, struct xmit_buf *pxmitbuf)
 	PTXDESC_8195A ptxdesc;
 	PAT_CMD_DESC patcmd;
 	_pkt *pkt = pxmitbuf->pkt;
+_func_enter_;
 	if(pkt == NULL)
 		return _FALSE;
 	ptxdesc = (PTXDESC_8195A)pxmitbuf->pdata;
@@ -63,9 +65,11 @@ s32 rtl8195as_hal_xmit(PADAPTER padapter, struct xmit_buf *pxmitbuf)
 	patcmd->offset = SIZE_AT_CMD_DESC;
 	_rtw_memcpy(pxmitbuf->pdata+sizeof(TX_DESC)+sizeof(AT_CMD_DESC), pkt->data, pkt->len);	
 	pxmitbuf->pkt = NULL;
+	rtw_skb_free(pkt);
 _enter_critical_bh(&pxmitpriv->xmitbuf_pending_queue.lock, &irqL);
 	rtw_list_insert_tail(&pxmitbuf->list, get_list_head(&pxmitpriv->xmitbuf_pending_queue));
 _exit_critical_bh(&pxmitpriv->xmitbuf_pending_queue.lock, &irqL);
+_func_exit_;
 	_rtw_up_sema(&pxmitpriv->xmit_sema);
 	return _TRUE;
 }

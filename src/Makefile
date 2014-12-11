@@ -60,10 +60,10 @@ endif
 ifneq ($(KERNELRELEASE),)
 
 rtk_core :=	core/rtw_cmd.o \
-		core/rtw_debug.o \
 		core/rtw_io.o \
 		core/rtw_recv.o \
-		core/rtw_xmit.o
+		core/rtw_xmit.o \
+		core/rtw_debug.o
 
 $(MODULE_NAME)-y += $(rtk_core)
 $(MODULE_NAME)-y += $(_OS_INTFS_FILES)

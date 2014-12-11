@@ -150,7 +150,7 @@ _func_enter_;
 	_enter_critical_bh(&pfree_xmit_queue->lock, &irqL);
 
 	if (_rtw_queue_empty(pfree_xmit_queue) == _TRUE) {
-		DBG_871X("rtw_alloc_xmitframe failed!\n");
+		DBG_871X("rtw_alloc_xmitbuf failed!\n");
 		pxmitbuf=  NULL;
 	} else {
 		phead = get_list_head(pfree_xmit_queue);
@@ -200,7 +200,7 @@ s32 check_pending_xmitbuf(PADAPTER padapter)
 	_queue *pqueue;
 	s32	ret = _FALSE;
 	struct xmit_priv *pxmitpriv = &padapter->xmitpriv;
-
+_func_enter_;
 	pqueue = &pxmitpriv->xmitbuf_pending_queue;
 
 	_enter_critical_bh(&pqueue->lock, &irql);
@@ -209,7 +209,7 @@ s32 check_pending_xmitbuf(PADAPTER padapter)
 		ret = _TRUE;
 
 	_exit_critical_bh(&pqueue->lock, &irql);
-
+_func_exit_;
 	return ret;
 }
 struct xmit_buf* rtw_dequeue_xmitbuf(PADAPTER padapter)
@@ -220,6 +220,7 @@ struct xmit_buf* rtw_dequeue_xmitbuf(PADAPTER padapter)
 	_queue *pframe_queue = NULL;
 	struct xmit_priv *pxmitpriv = &padapter->xmitpriv;
 	pframe_queue = &pxmitpriv->xmitbuf_pending_queue;
+_func_enter_;
 _enter_critical_bh(&pframe_queue->lock, &irqL);
 	phead = get_list_head(pframe_queue);
 	plist = get_next(phead);
@@ -229,6 +230,7 @@ _enter_critical_bh(&pframe_queue->lock, &irqL);
 		rtw_list_delete(&pxmitbuf->list);
 	}
 _exit_critical_bh(&pframe_queue->lock, &irqL);
+_func_exit_;
 	return pxmitbuf;
 }
 thread_return rtw_xmit_thread(void *context)
