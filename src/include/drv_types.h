@@ -164,6 +164,18 @@ unsigned int datatype: 1; // only one bit used, 0: data frame 1: management fram
 };
 #define SIZE_AT_CMD_DESC (sizeof(AT_CMD_DESC))
 
+#define RTW_CANNOT_IO(padapter) \
+			((padapter)->bSurpriseRemoved)
+
+#define RTW_CANNOT_RX(padapter) \
+			((padapter)->bDriverStopped || \
+			 (padapter)->bSurpriseRemoved)
+
+#define RTW_CANNOT_TX(padapter) \
+			((padapter)->bDriverStopped || \
+			 (padapter)->bSurpriseRemoved)
+
+
 /*********AT command set***********/
 #define SIZE_AT_CMD_TYPE		2
 #define MNGMT_FRAME			1
