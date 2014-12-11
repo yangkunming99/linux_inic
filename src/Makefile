@@ -21,28 +21,58 @@ ifeq ($(CONFIG_USB_HCI), y)
 HCI_NAME = usb
 endif
 
-_OS_INTFS_FILES :=	os_dep/osdep_service.o \
-			os_dep/linux/os_intfs.o \
-			os_dep/linux/$(HCI_NAME)_intf.o \
-			os_dep/linux/$(HCI_NAME)_ops_linux.o \
-			os_dep/linux/ioctl_linux.o \
-			os_dep/linux/xmit_linux.o 
-
-ifeq ($(CONFIG_SDIO_HCI), y)
-_OS_INTFS_FILES += os_dep/linux/$(HCI_NAME)_ops_linux.o
-endif
+_OS_INTFS_FILES :=	osdep/osdep_service.o \
+			osdep/linux/os_intfs.o \
+			osdep/linux/$(HCI_NAME)_intf.o \
+			osdep/linux/$(HCI_NAME)_ops_linux.o \
+			osdep/linux/ioctl_linux.o \
+			osdep/linux/xmit_linux.o \
+			osdep/linux/recv_linux.o
 
 _HAL_INTFS_FILES :=	hal/hal_intf.o 
 
+########### HAL_RTL8195A #################################
+ifeq ($(CONFIG_RTL8195A), y)
 
-obj-m := inic_8195a.o
-inic_8195a-objs := osdep/linux/sdio_intf.o hal/rtl8195a/sdio/sdio_ops.o \
-			core/rtw_xmit.o core/rtw_recv.o core/rtw_io.o core/rtw_cmd.o \
-			osdep/linux/sdio_ops_linux.o osdep/linux/ioctl_linux.o \
-			osdep/osdep_service.o osdep/linux/os_intfs.o \
-			hal/hal_intf.o hal/rtl8195a/rtl8195a_hal_ops.o \
-			hal/rtl8195a/sdio/rtl8195as_xmit.o osdep/linux/xmit_linux.o \
-			core/rtw_debug.o
+RTL871X = rtl8195a
+ifeq ($(CONFIG_SDIO_HCI), y)
+MODULE_NAME = 8195as
+endif
+ifeq ($(CONFIG_USB_HCI), y)
+MODULE_NAME = 8195au
+endif
+
+_HAL_INTFS_FILES += \
+	hal/$(RTL871X)/$(RTL871X)_hal_ops.o
+
+_HAL_INTFS_FILES +=	 \
+			hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_xmit.o \
+			hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_recv.o
+
+ifeq ($(CONFIG_SDIO_HCI), y)
+_HAL_INTFS_FILES += hal/$(RTL871X)/$(HCI_NAME)/$(HCI_NAME)_ops.o
+endif
+
+endif
+
+#######################################################
+
+
+ifneq ($(KERNELRELEASE),)
+
+rtk_core :=	core/rtw_cmd.o \
+		core/rtw_debug.o \
+		core/rtw_io.o \
+		core/rtw_recv.o \
+		core/rtw_xmit.o
+
+$(MODULE_NAME)-y += $(rtk_core)
+$(MODULE_NAME)-y += $(_OS_INTFS_FILES)
+$(MODULE_NAME)-y += $(_HAL_INTFS_FILES)
+
+obj-m := $(MODULE_NAME).o
+
+else
 
 BASEDIR := /lib/modules/$(shell uname -r)
 KERNELDIR ?= $(BASEDIR)/build
@@ -68,4 +98,4 @@ clean:
 install:
 	$(MAKE) -C $(KERNELDIR) SUBDIRS=$(PWD) INSTALL_MOD_DIR=$(RTKDIR) modules_install
 
-
+endif
