@@ -45,3 +45,13 @@ u32 rtw_write_port(PADAPTER padapter, u32 addr, u32 cnt, u8 *pmem)
 
 	return ret;
 }
+
+void rtw_write_port_cancel(_adapter *adapter)
+{
+	void (*_write_port_cancel)(struct intf_hdl *pintfhdl);
+	
+	_write_port_cancel = adapter->io_ops._write_port_cancel;
+
+	if(_write_port_cancel)
+		_write_port_cancel(adapter);
+}

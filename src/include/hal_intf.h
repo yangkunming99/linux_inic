@@ -34,6 +34,8 @@ struct hal_ops {
 	s32 (*xmit_thread_handler)(_adapter *padapter);
 	void	(*enable_interrupt)(_adapter *padapter);
 	void	(*disable_interrupt)(_adapter *padapter);
+	u32	(*inirp_init)(_adapter *padapter);
+	u32	(*inirp_deinit)(_adapter *padapter);
 };
 uint rtw_hal_init(_adapter *padapter);
 uint rtw_hal_deinit(_adapter *padapter);
@@ -42,4 +44,8 @@ s32	rtw_hal_mgnt_xmit(PADAPTER padapter, struct cmd_obj *pcmd);
 s32 rtw_hal_xmit_thread_handler(_adapter *padapter);
 void rtw_hal_enable_interrupt(_adapter *padapter);
 void rtw_hal_disable_interrupt(_adapter *padapter);
+u32	rtw_hal_inirp_init(_adapter *padapter);
+u32	rtw_hal_inirp_deinit(_adapter *padapter);
+
+
 #endif

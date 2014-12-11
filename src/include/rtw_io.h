@@ -19,6 +19,9 @@ struct _io_ops
 
 	u32 (*_read_port)(PADAPTER padapter, u32 addr, u32 cnt, u8 *pmem);
 	u32 (*_write_port)(PADAPTER padapter, u32 addr, u32 cnt, u8 *pmem);
+	
+	void (*_read_port_cancel)(PADAPTER padapter);
+	void (*_write_port_cancel)(PADAPTER padapter);
 
 #ifdef CONFIG_SDIO_HCI
 	u8 (*_sd_f0_read8)(PADAPTER padapter, u32 addr);
@@ -31,5 +34,6 @@ struct _io_ops
 int rtw_inc_and_chk_continual_io_error(struct dvobj_priv *dvobj);
 void rtw_reset_continual_io_error(struct dvobj_priv *dvobj);
 u32 rtw_write_port(PADAPTER padapter, u32 addr, u32 cnt, u8 *pmem);
+void rtw_write_port_cancel(_adapter *adapter);
 
 #endif

@@ -4,4 +4,8 @@
 s32 rtl8195as_hal_xmit_handler(PADAPTER padapter);
 s32 rtl8195as_hal_xmit(PADAPTER padapter, struct xmit_buf *pxmitbuf);
 s32 rtl8195as_hal_mgnt_xmit(PADAPTER padapter, struct cmd_obj *pcmd);
+
+s32 rtl8195au_hal_xmit_handler(PADAPTER padapter);
+s32 rtl8195au_hal_xmit(PADAPTER padapter, struct xmit_buf *pxmitbuf);
+s32 rtl8195au_hal_mgnt_xmit(PADAPTER padapter, struct cmd_obj *pcmd);
 #endif

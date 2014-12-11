@@ -35,6 +35,23 @@ uint	 rtw_hal_deinit(_adapter *padapter)
 
 	return _FAIL;	
 }
+
+u32	rtw_hal_inirp_init(_adapter *padapter)
+{
+	if(padapter->HalFunc.inirp_init)	
+		return padapter->HalFunc.inirp_init(padapter);	
+	return _FAIL;
+}
+	
+u32	rtw_hal_inirp_deinit(_adapter *padapter)
+{
+	
+	if(padapter->HalFunc.inirp_deinit)
+		return padapter->HalFunc.inirp_deinit(padapter);
+
+	return _FAIL;	
+}
+
 s32	rtw_hal_xmit(PADAPTER padapter, struct xmit_buf *pxmitbuf)
 {
 	if(padapter->HalFunc.hal_xmit)
