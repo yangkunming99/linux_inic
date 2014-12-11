@@ -67,7 +67,7 @@ u32 rtw_read_port(_adapter *adapter, u32 addr, u32 cnt, u8 *pmem)
 	if( (adapter->bDriverStopped ==_TRUE) || (adapter->bSurpriseRemoved == _TRUE))
 	{
 	     RT_TRACE(_module_rtl871x_io_c_, _drv_info_, ("rtw_read_port:bDriverStopped(%d) OR bSurpriseRemoved(%d)", adapter->bDriverStopped, adapter->bSurpriseRemoved));	    
-	     return;
+	     return _FAIL;
 	}
 
 	_read_port = adapter->io_ops._read_port;

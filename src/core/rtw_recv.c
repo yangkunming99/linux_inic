@@ -1,10 +1,9 @@
 #include "autoconf.h"
 #include "rtw_debug.h"
-//#include "sdio_ops.h"
 #include "osdep_service.h"
-//#include "sdio_ops_linux.h"
 #include "drv_types.h"
 #include "rtw_recv.h"
+#include "recv_osdep.h"
 #include "hal_intf.h"
 #define _RTW_RECV_C_
 struct recv_buf *rtw_dequeue_recvbuf (_queue *queue)
@@ -66,50 +65,77 @@ void rtw_free_recv_priv(PADAPTER padapter)
 	rtw_hal_free_recv_priv(padapter);
 }
 
-void rtw_recv_entry(PADAPTER padapter, struct sk_buff *skb)
+int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf)
 {
-	struct net_device *pnetdev = padapter->pnetdev;
+	int ret = _SUCCESS;
+	struct recv_priv *precvpriv = &padapter->recvpriv;
 	AT_CMD_DESC atcmddesc;
 	//_irqL irqL;
 	unsigned char attype[2];
 	struct cmd_priv *pcmdpriv;
 	
 
-	_rtw_memcpy(&atcmddesc, skb->data, SIZE_AT_CMD_DESC);
-
+	_rtw_memcpy(&atcmddesc, precvbuf->pskb->data, SIZE_AT_CMD_DESC);
 	//remove the at cmd header
-	skb_pull(skb, atcmddesc.offset);
-
-	pnetdev->stats.rx_packets = (++(padapter->stats.rx_packets));
-	pnetdev->stats.rx_bytes =(padapter->stats.rx_bytes+=atcmddesc.pktsize);
+	skb_pull(precvbuf->pskb, atcmddesc.offset);
 
 	if(atcmddesc.datatype == DATA_FRAME)//data pkt 
 	{	
+		if ((padapter->bDriverStopped == _FALSE) && (padapter->bSurpriseRemoved == _FALSE))
+		{
+			RT_TRACE(_module_rtl871x_recv_c_, _drv_alert_, ("@@@@ recv_func: recv_func rtw_recv_indicatepkt\n" ));
+			//indicate this recv_frame
+			ret = rtw_recv_indicatepkt(padapter, precvbuf);
+			if (ret != _SUCCESS)
+			{	
+				#ifdef DBG_RX_DROP_FRAME
+				DBG_871X("DBG_RX_DROP_FRAME %s rtw_recv_indicatepkt fail!\n", __FUNCTION__);
+				#endif
+				goto _recv_data_drop;
+			}
+		}
+		else
+		{
+			RT_TRACE(_module_rtl871x_recv_c_, _drv_alert_, ("@@@@  recv_func: rtw_free_recvframe\n" ));
+			RT_TRACE(_module_rtl871x_recv_c_, _drv_debug_, ("recv_func:bDriverStopped(%d) OR bSurpriseRemoved(%d)", padapter->bDriverStopped, padapter->bSurpriseRemoved));
+			#ifdef DBG_RX_DROP_FRAME
+			DBG_871X("DBG_RX_DROP_FRAME %s ecv_func:bDriverStopped(%d) OR bSurpriseRemoved(%d)\n", __FUNCTION__,
+				padapter->bDriverStopped, padapter->bSurpriseRemoved);
+			#endif
+			ret = _FAIL;
+			goto _recv_data_drop;
+		}
+/*
 		skb->protocol = eth_type_trans(skb, pnetdev);
 		skb->dev = pnetdev;
 		skb->ip_summed = CHECKSUM_NONE;
 		_rtw_netif_rx(pnetdev, skb);
+*/
 	}
 	else if(atcmddesc.datatype == MNGMT_FRAME)//cmd pkt
 	{
 		pcmdpriv = &padapter->cmdpriv;
 		//check the at cmd type
-		_rtw_memcpy(&attype, skb->data, 2);
+		_rtw_memcpy(&attype, precvbuf->pskb->data, 2);
 		if(_rtw_memcmp(attype, AT_CMD_wifi_linked, SIZE_AT_CMD_TYPE))
 		{
 			DBG_871X("%s: Ameba connected!\n", __FUNCTION__);
-			rtw_os_indicate_connect(pnetdev);
-			return;
+			rtw_os_indicate_connect(padapter->pnetdev);
 		}
 		if(_rtw_memcmp(attype, AT_CMD_wifi_unlinked, SIZE_AT_CMD_TYPE))
 		{
 			DBG_871X("%s: Ameba disconnected!\n", __FUNCTION__);
-			rtw_os_indicate_disconnect(pnetdev);
-			return;
+			rtw_os_indicate_disconnect(padapter->pnetdev);
 		}
-		_rtw_skb_free(skb);		
+		_rtw_skb_free(precvbuf->pskb);
+		goto _free_recv_buf;
 	}
-	else
-		return;
+_recv_data_drop:
+	precvpriv->rx_drop++;
+_free_recv_buf:
+	precvbuf->pskb = NULL;
+	rtw_enqueue_recvbuf(precvbuf, &precvpriv->free_recv_buf_queue);
+	precvpriv->free_recv_buf_queue_cnt++;
+	return ret;
 }
 

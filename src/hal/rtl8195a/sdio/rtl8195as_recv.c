@@ -3,7 +3,7 @@
 #include "drv_types.h"
 #include "8195_desc.h"
 #include "8195_sdio_reg.h"
-extern void rtw_recv_entry(PADAPTER padapter, _pkt *skb);
+extern int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf);
 static void rtl8195as_recv_tasklet(void *priv)
 {
 	PADAPTER padapter;
@@ -18,10 +18,12 @@ static void rtl8195as_recv_tasklet(void *priv)
 		_rtw_memcpy(&rxdesc, precvbuf->pdata, SIZE_RX_DESC_8195a);
 		//remove the sdio header
 		skb_pull(precvbuf->pskb, rxdesc.offset);
-		rtw_recv_entry(padapter, precvbuf->pskb);
-		precvbuf->pskb = NULL;
-		rtw_enqueue_recvbuf(precvbuf, &precvpriv->free_recv_buf_queue);
-		precvpriv->free_recv_buf_queue_cnt++;
+		precvbuf->pdata = precvbuf->pskb->data;
+		if (rtw_recv_entry(padapter, precvbuf) != _SUCCESS)
+		{
+			RT_TRACE(_module_rtl871x_recv_c_, _drv_err_, ("%s: rtw_recv_entry(padapter, precvbuf) != _SUCCESS\n",__FUNCTION__));
+		}
+
 	} while (1);
 
 }
