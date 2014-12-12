@@ -8,7 +8,6 @@
 
 void rtw_os_recv_indicate_pkt(_adapter *padapter, _pkt *pkt)
 {
-
 	/* Indicat the packets to upper layer */
 	if (pkt) {
 		pkt->protocol = eth_type_trans(pkt, padapter->pnetdev);

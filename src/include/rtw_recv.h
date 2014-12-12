@@ -2,7 +2,6 @@
 #define __RTW_RECV_H__
 
 #include "drv_types.h"
-//#include "sdio_ops.h"
 
 #define NR_RECVBUFF (128)
 struct recv_priv
