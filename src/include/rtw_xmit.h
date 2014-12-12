@@ -34,21 +34,30 @@ void rtw_sctx_done(struct submit_ctx **sctx);
 struct xmit_buf
 {
 	_list list;
+	PADAPTER padapter;
 	_pkt *pkt;
 	u16 pkt_len;
+	u8 *pallocated_buf;
+	u8 *pbuf;
+#if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
+	u8 *phead;
 	u8 *pdata;
+	u8 *ptail;
+	u8 *pend;
+#endif
+
 };
 struct xmit_priv
 {
 	_lock lock;
-	
+	PADAPTER padapter;
 	_queue free_xmit_queue;
 	_queue xmitbuf_pending_queue;
 	
 	u8 *pallocated_freebuf;
 	u8 *xmit_freebuf;
-	u8 *pallocated_pdata;
-	u8 *xmit_pdata;
+//	u8 *pallocated_pdata;
+//	u8 *xmit_pdata;
 
 	u64	tx_bytes;
 	u64	tx_pkts;

@@ -76,17 +76,20 @@ void rtw_sctx_done(struct submit_ctx **sctx)
 }
 
 
-s32 rtw_init_xmit_freebuf(struct xmit_priv *pxmitpriv)
+s32 rtw_init_xmit_freebuf(struct xmit_priv *pxmitpriv, PADAPTER padapter)
 {
 	struct xmit_buf *pxmitbuf;
-	int i;
-	pxmitpriv->pallocated_freebuf = rtw_zvmalloc(NR_XMITBUFF*sizeof(struct xmit_buf));
+	sint	res=_SUCCESS;
+	int i , j=0;
+	pxmitpriv->pallocated_freebuf = rtw_zvmalloc(NR_XMITBUFF*sizeof(struct xmit_buf)+4);
 	if(pxmitpriv->pallocated_freebuf==NULL)
 	{
 		DBG_871X("%s: pallocated_freebuf failed!\n", __FUNCTION__);
-		return _FAIL;
+		res = _FAIL;
+		goto exit;
 	}
 	pxmitpriv->xmit_freebuf = (u8 *)N_BYTE_ALIGMENT((SIZE_PTR)(pxmitpriv->pallocated_freebuf), 4);
+/*
 	pxmitpriv->pallocated_pdata = rtw_zmalloc(NR_XMITBUFF*MAX_XMITBUF_SZ);
 	if(pxmitpriv->pallocated_pdata==NULL)
 	{
@@ -95,20 +98,50 @@ s32 rtw_init_xmit_freebuf(struct xmit_priv *pxmitpriv)
 		return _FAIL;
 	}
 	pxmitpriv->xmit_pdata = (u8 *)N_BYTE_ALIGMENT((SIZE_PTR)(pxmitpriv->pallocated_pdata), XMITBUF_ALIGN_SZ);
+*/
 	pxmitbuf = (struct xmit_buf *)pxmitpriv->xmit_freebuf;
 	for (i = 0; i < NR_XMITBUFF; i++)
 	{
 		_rtw_init_listhead(&(pxmitbuf->list));
 
-		pxmitbuf->pdata = pxmitpriv->xmit_pdata+i*MAX_XMITBUF_SZ;
-		pxmitbuf->pkt_len=0;
+		pxmitbuf->padapter = padapter;
+
+		/* Tx buf allocation may fail sometimes, so sleep and retry. */
+		if((res=rtw_os_xmit_resource_alloc(padapter, pxmitbuf,(MAX_XMITBUF_SZ + XMITBUF_ALIGN_SZ), _TRUE)) == _FAIL) {
+			rtw_msleep_os(10);
+			res = rtw_os_xmit_resource_alloc(padapter, pxmitbuf,(MAX_XMITBUF_SZ + XMITBUF_ALIGN_SZ), _TRUE);
+			if (res == _FAIL) {
+				goto free_os_resource;
+			}
+		}
+#if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
+		pxmitbuf->phead = pxmitbuf->pbuf;
+		pxmitbuf->pend = pxmitbuf->pbuf + MAX_XMITBUF_SZ;
+		pxmitbuf->pkt_len = 0;
+		pxmitbuf->pdata = pxmitbuf->ptail = pxmitbuf->phead;
+#endif
 
 		rtw_list_insert_tail(&(pxmitbuf->list), &(pxmitpriv->free_xmit_queue.queue));
 
 		pxmitbuf++;
 	}
-	
-	return _SUCCESS;
+free_os_resource:
+	if(res == _FAIL){
+		pxmitbuf = (struct xmit_buf *)pxmitpriv->xmit_freebuf;
+		for(j=1;j<i;j++)
+		{
+			rtw_os_xmit_resource_free(padapter, pxmitbuf,(MAX_XMITBUF_SZ + XMITBUF_ALIGN_SZ), _TRUE);			
+			pxmitbuf++;
+		}
+	}		
+free_xmitbuf:
+	if((res == _FAIL)&&(pxmitpriv->pallocated_freebuf))
+		rtw_vmfree(pxmitpriv->pallocated_freebuf, NR_XMITBUFF*sizeof(struct xmit_buf)+4);
+exit:
+
+_func_exit_;	
+
+	return res;
 }
 s32 rtw_init_xmit_priv(PADAPTER padapter)
 {
@@ -117,7 +150,8 @@ s32 rtw_init_xmit_priv(PADAPTER padapter)
 	_rtw_init_queue(&pxmitpriv->xmitbuf_pending_queue);
 	_rtw_init_sema(&pxmitpriv->xmit_sema, 0);
 	//_rtw_init_sema(&padapter->XmitTerminateSema, 0);
-	if(rtw_init_xmit_freebuf(pxmitpriv) == _FAIL)
+	pxmitpriv->adapter = padapter;
+	if(rtw_init_xmit_freebuf(pxmitpriv, padapter) == _FAIL)
 	{
 		return _FAIL;
 	}
@@ -125,11 +159,27 @@ s32 rtw_init_xmit_priv(PADAPTER padapter)
 }
 void rtw_free_xmit_priv(PADAPTER padapter)
 {
+	int i = 0;
 	struct xmit_priv *pxmitpriv = &padapter->xmitpriv;
-	if(pxmitpriv->pallocated_pdata)
-		rtw_mfree(pxmitpriv->pallocated_pdata, NR_XMITBUFF*MAX_XMITBUF_SZ);
+	struct xmit_buf *pxmitbuf = pxmitpriv->xmit_freebuf;
+ _func_enter_;   
+
+	rtw_hal_free_xmit_priv(padapter);
+
+	for(i=0; i<NR_XMITBUFF; i++)
+	{
+		rtw_os_xmit_complete(padapter, pxmitbuf);
+	
+		rtw_os_xmit_resource_free(padapter, pxmitbuf,(MAX_XMITBUF_SZ + XMITBUF_ALIGN_SZ), _TRUE);
+		
+		pxmitbuf++;
+	}	
+//	if(pxmitpriv->pallocated_pdata)
+//		rtw_mfree(pxmitpriv->pallocated_pdata, NR_XMITBUFF*MAX_XMITBUF_SZ);
 	if(pxmitpriv->pallocated_freebuf)
-		rtw_vmfree(pxmitpriv->pallocated_freebuf, NR_XMITBUFF*sizeof(struct xmit_buf));
+		rtw_vmfree(pxmitpriv->pallocated_freebuf, NR_XMITBUFF*sizeof(struct xmit_buf)+4);
+
+_func_exit_;
 }
 struct xmit_buf *rtw_alloc_xmitbuf(PADAPTER padapter)//(_queue *pfree_xmit_queue)
 {

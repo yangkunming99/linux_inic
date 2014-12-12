@@ -111,6 +111,6 @@ void rtw_hal_disable_interrupt(_adapter *padapter)
 {
 	if (padapter->HalFunc.disable_interrupt)
 		padapter->HalFunc.disable_interrupt(padapter);
-	else 
+	else
 		DBG_871X("%s: HalFunc.disable_interrupt is NULL!\n", __FUNCTION__);	
 }
