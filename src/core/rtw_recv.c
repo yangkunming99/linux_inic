@@ -13,7 +13,11 @@ struct recv_buf *rtw_dequeue_recvbuf (_queue *queue)
 	_list	*plist, *phead;	
 
 
+#ifdef CONFIG_SDIO_HCI
 	_enter_critical_bh(&queue->lock, &irqL);
+#else
+	_enter_critical_ex(&queue->lock, &irqL);
+#endif/*#ifdef  CONFIG_SDIO_HCI*/
 	
 	if(_rtw_queue_empty(queue) == _TRUE)
 	{
@@ -31,7 +35,11 @@ struct recv_buf *rtw_dequeue_recvbuf (_queue *queue)
 		
 	}
 
+#ifdef CONFIG_SDIO_HCI
 	_exit_critical_bh(&queue->lock, &irqL);
+#else
+	_exit_critical_ex(&queue->lock, &irqL);
+#endif/*#ifdef  CONFIG_SDIO_HCI*/
 
 	return precvbuf;
 
@@ -40,13 +48,21 @@ s32 rtw_enqueue_recvbuf(struct recv_buf *precvbuf, _queue *queue)
 {
 	_irqL irqL;	
 
+#ifdef CONFIG_SDIO_HCI
 	_enter_critical_bh(&queue->lock, &irqL);
+#else
+	_enter_critical_ex(&queue->lock, &irqL);
+#endif/*#ifdef  CONFIG_SDIO_HCI*/
 
 	rtw_list_delete(&precvbuf->list);
 
 	rtw_list_insert_tail(&precvbuf->list, get_list_head(queue));
 
+#ifdef CONFIG_SDIO_HCI	
 	_exit_critical_bh(&queue->lock, &irqL);
+#else
+	_exit_critical_ex(&queue->lock, &irqL);
+#endif/*#ifdef  CONFIG_SDIO_HCI*/
 	return _SUCCESS;
 	
 }
