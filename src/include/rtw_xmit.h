@@ -88,7 +88,6 @@ struct xmit_priv
 
 	_sema xmit_sema;
 	_thread_hdl_ xmitThread;
-
 };
 #define XMITBUF_ALIGN_SZ		4
 
