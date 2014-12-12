@@ -25,7 +25,6 @@ void rtw_os_pkt_complete(_adapter *padapter, _pkt *pkt)
 {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35))
 	u16	queue;
-	struct xmit_priv *pxmitpriv = &padapter->xmitpriv;
 
 	queue = skb_get_queue_mapping(pkt);
 

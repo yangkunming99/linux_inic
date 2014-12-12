@@ -74,12 +74,20 @@ void rtw_sctx_done(struct submit_ctx **sctx)
 	rtw_sctx_done_err(sctx, RTW_SCTX_DONE_SUCCESS);
 }
 
-
-s32 rtw_init_xmit_freebuf(struct xmit_priv *pxmitpriv, PADAPTER padapter)
+s32 rtw_init_xmit_priv(PADAPTER padapter)
 {
 	struct xmit_buf *pxmitbuf;
 	sint	res=_SUCCESS;
 	int i , j=0;
+	struct xmit_priv *pxmitpriv = &padapter->xmitpriv;
+	
+	_rtw_init_queue(&pxmitpriv->free_xmit_queue);
+	_rtw_init_queue(&pxmitpriv->xmitbuf_pending_queue);
+	_rtw_init_sema(&pxmitpriv->xmit_sema, 0);
+	//_rtw_init_sema(&padapter->XmitTerminateSema, 0);
+	
+	pxmitpriv->padapter = padapter;
+	
 	pxmitpriv->pallocated_freebuf = rtw_zvmalloc(NR_XMITBUFF*sizeof(struct xmit_buf)+4);
 	if(pxmitpriv->pallocated_freebuf==NULL)
 	{
@@ -88,16 +96,7 @@ s32 rtw_init_xmit_freebuf(struct xmit_priv *pxmitpriv, PADAPTER padapter)
 		goto exit;
 	}
 	pxmitpriv->xmit_freebuf = (u8 *)N_BYTE_ALIGMENT((SIZE_PTR)(pxmitpriv->pallocated_freebuf), 4);
-/*
-	pxmitpriv->pallocated_pdata = rtw_zmalloc(NR_XMITBUFF*MAX_XMITBUF_SZ);
-	if(pxmitpriv->pallocated_pdata==NULL)
-	{
-		rtw_vmfree(pxmitpriv->pallocated_freebuf, NR_XMITBUFF*sizeof(struct xmit_buf));
-		DBG_871X("%s: pallocated_pdata failed!\n", __FUNCTION__);
-		return _FAIL;
-	}
-	pxmitpriv->xmit_pdata = (u8 *)N_BYTE_ALIGMENT((SIZE_PTR)(pxmitpriv->pallocated_pdata), XMITBUF_ALIGN_SZ);
-*/
+
 	pxmitbuf = (struct xmit_buf *)pxmitpriv->xmit_freebuf;
 	for (i = 0; i < NR_XMITBUFF; i++)
 	{
@@ -124,6 +123,9 @@ s32 rtw_init_xmit_freebuf(struct xmit_priv *pxmitpriv, PADAPTER padapter)
 
 		pxmitbuf++;
 	}
+	if((res = rtw_hal_init_xmit_priv(padapter)) == _FAIL)
+		goto free_os_resource;
+	
 free_os_resource:
 	if(res == _FAIL){
 		pxmitbuf = (struct xmit_buf *)pxmitpriv->xmit_freebuf;
@@ -133,28 +135,14 @@ free_os_resource:
 			pxmitbuf++;
 		}
 	}		
-free_xmitbuf:
 	if((res == _FAIL)&&(pxmitpriv->pallocated_freebuf))
 		rtw_vmfree(pxmitpriv->pallocated_freebuf, NR_XMITBUFF*sizeof(struct xmit_buf)+4);
+
 exit:
 
 _func_exit_;	
 
 	return res;
-}
-s32 rtw_init_xmit_priv(PADAPTER padapter)
-{
-	struct xmit_priv *pxmitpriv = &padapter->xmitpriv;
-	_rtw_init_queue(&pxmitpriv->free_xmit_queue);
-	_rtw_init_queue(&pxmitpriv->xmitbuf_pending_queue);
-	_rtw_init_sema(&pxmitpriv->xmit_sema, 0);
-	//_rtw_init_sema(&padapter->XmitTerminateSema, 0);
-	pxmitpriv->padapter = padapter;
-	if(rtw_init_xmit_freebuf(pxmitpriv, padapter) == _FAIL)
-	{
-		return _FAIL;
-	}
-	return _SUCCESS;
 }
 void rtw_free_xmit_priv(PADAPTER padapter)
 {
@@ -173,8 +161,7 @@ void rtw_free_xmit_priv(PADAPTER padapter)
 		
 		pxmitbuf++;
 	}	
-//	if(pxmitpriv->pallocated_pdata)
-//		rtw_mfree(pxmitpriv->pallocated_pdata, NR_XMITBUFF*MAX_XMITBUF_SZ);
+
 	if(pxmitpriv->pallocated_freebuf)
 		rtw_vmfree(pxmitpriv->pallocated_freebuf, NR_XMITBUFF*sizeof(struct xmit_buf)+4);
 
