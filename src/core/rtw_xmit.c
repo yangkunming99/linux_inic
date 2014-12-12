@@ -3,10 +3,9 @@
 #include "drv_types.h"
 #include "rtw_xmit.h"
 #include "rtw_ioctl.h"
-#include "8195_desc.h"
-#include "8195_sdio_reg.h"
 #include "sdio_ops.h"
 #include "hal_intf.h"
+#include "xmit_osdep.h"
 #define _RTW_XMIT_C_
 void rtw_sctx_init(struct submit_ctx *sctx, int timeout_ms)
 {
@@ -150,7 +149,7 @@ s32 rtw_init_xmit_priv(PADAPTER padapter)
 	_rtw_init_queue(&pxmitpriv->xmitbuf_pending_queue);
 	_rtw_init_sema(&pxmitpriv->xmit_sema, 0);
 	//_rtw_init_sema(&padapter->XmitTerminateSema, 0);
-	pxmitpriv->adapter = padapter;
+	pxmitpriv->padapter = padapter;
 	if(rtw_init_xmit_freebuf(pxmitpriv, padapter) == _FAIL)
 	{
 		return _FAIL;
@@ -161,7 +160,7 @@ void rtw_free_xmit_priv(PADAPTER padapter)
 {
 	int i = 0;
 	struct xmit_priv *pxmitpriv = &padapter->xmitpriv;
-	struct xmit_buf *pxmitbuf = pxmitpriv->xmit_freebuf;
+	struct xmit_buf *pxmitbuf = (struct xmit_buf *)pxmitpriv->xmit_freebuf;
  _func_enter_;   
 
 	rtw_hal_free_xmit_priv(padapter);

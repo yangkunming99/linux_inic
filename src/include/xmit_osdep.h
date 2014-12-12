@@ -28,5 +28,10 @@ extern int _rtw_xmit_entry(_pkt *pkt, _nic_hdl pnetdev);
 extern int rtw_xmit_entry(_pkt *pkt, _nic_hdl pnetdev);
 #endif
 
+
+void rtw_os_xmit_complete(_adapter *padapter, struct xmit_buf *pxbuf);
+int rtw_os_xmit_resource_alloc(_adapter *padapter, struct xmit_buf *pxmitbuf, u32 alloc_sz, u8 flag);
+void rtw_os_xmit_resource_free(_adapter *padapter, struct xmit_buf *pxmitbuf, u32 free_sz, u8 flag);
+
 #endif //__XMIT_OSDEP_H_
 
