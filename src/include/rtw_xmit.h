@@ -67,7 +67,9 @@ struct xmit_buf
 	sint last[8];
 
 #endif
-
+#if defined(DBG_XMIT_BUF )|| defined(DBG_XMIT_BUF_EXT)
+	u8 no;
+#endif
 };
 struct xmit_priv
 {
@@ -78,8 +80,7 @@ struct xmit_priv
 	
 	u8 *pallocated_freebuf;
 	u8 *xmit_freebuf;
-//	u8 *pallocated_pdata;
-//	u8 *xmit_pdata;
+	uint free_xmitbuf_cnt;
 
 	u64	tx_bytes;
 	u64	tx_pkts;

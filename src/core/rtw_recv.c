@@ -131,7 +131,9 @@ int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf)
 		goto _free_recv_buf;
 	}
 _recv_data_drop:
-	precvpriv->rx_drop++;
+	if(ret == _FAIL){
+		precvpriv->rx_drop++;
+	}
 _free_recv_buf:
 	precvbuf->pskb = NULL;
 	rtw_enqueue_recvbuf(precvbuf, &precvpriv->free_recv_buf_queue);

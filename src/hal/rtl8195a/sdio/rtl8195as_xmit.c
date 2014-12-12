@@ -65,6 +65,8 @@ _func_enter_;
 	patcmd->offset = SIZE_AT_CMD_DESC;
 	_rtw_memcpy(pxmitbuf->pdata+sizeof(TX_DESC)+sizeof(AT_CMD_DESC), pkt->data, pkt->len);	
 	pxmitbuf->pkt = NULL;
+	pxmitpriv->tx_pkts++;
+	pxmitpriv->tx_bytes+=pkt->len;
 	rtw_skb_free(pkt);
 _enter_critical_bh(&pxmitpriv->xmitbuf_pending_queue.lock, &irqL);
 	rtw_list_insert_tail(&pxmitbuf->list, get_list_head(&pxmitpriv->xmitbuf_pending_queue));

@@ -120,9 +120,12 @@ s32 rtw_init_xmit_priv(PADAPTER padapter)
 #endif
 
 		rtw_list_insert_tail(&(pxmitbuf->list), &(pxmitpriv->free_xmit_queue.queue));
-
+		#ifdef DBG_XMIT_BUF
+		pxmitbuf->no=i;
+		#endif
 		pxmitbuf++;
 	}
+	pxmitpriv->free_xmitbuf_cnt = NR_XMITBUFF;
 	if((res = rtw_hal_init_xmit_priv(padapter)) == _FAIL)
 		goto free_os_resource;
 	
@@ -164,7 +167,8 @@ void rtw_free_xmit_priv(PADAPTER padapter)
 
 	if(pxmitpriv->pallocated_freebuf)
 		rtw_vmfree(pxmitpriv->pallocated_freebuf, NR_XMITBUFF*sizeof(struct xmit_buf)+4);
-
+	pxmitpriv->free_xmitbuf_cnt = 0;
+	
 _func_exit_;
 }
 struct xmit_buf *rtw_alloc_xmitbuf(PADAPTER padapter)//(_queue *pfree_xmit_queue)
@@ -183,7 +187,7 @@ struct xmit_buf *rtw_alloc_xmitbuf(PADAPTER padapter)//(_queue *pfree_xmit_queue
 
 _func_enter_;
 
-	_enter_critical_bh(&pfree_xmit_queue->lock, &irqL);
+	_enter_critical(&pfree_xmit_queue->lock, &irqL);
 
 	if (_rtw_queue_empty(pfree_xmit_queue) == _TRUE) {
 		DBG_871X("rtw_alloc_xmitbuf failed!\n");
@@ -197,8 +201,19 @@ _func_enter_;
 
 		rtw_list_delete(&(pxmitbuf->list));
 	}
+	if(pxmitbuf){
+		pxmitpriv->free_xmitbuf_cnt--;
+		#ifdef DBG_XMIT_BUF
+		DBG_871X("DBG_XMIT_BUF ALLOC no=%d,  free_xmitbuf_cnt=%d\n",pxmitbuf->no, pxmitpriv->free_xmitbuf_cnt);
+		#endif
+#if defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
+		pxmitbuf->pkt_len = 0;
+		pxmitbuf->pdata = pxmitbuf->ptail = pxmitbuf->phead;
+#endif
 
-	_exit_critical_bh(&pfree_xmit_queue->lock, &irqL);
+	}
+
+	_exit_critical(&pfree_xmit_queue->lock, &irqL);
 
 _func_exit_;
 
@@ -216,12 +231,15 @@ _func_enter_;
 		goto exit;
 	}
 
-	_enter_critical_bh(&queue->lock, &irqL);
+	_enter_critical(&queue->lock, &irqL);
 
 	rtw_list_delete(&pxmitbuf->list);	
 	rtw_list_insert_tail(&pxmitbuf->list, get_list_head(queue));
-
-	_exit_critical_bh(&queue->lock, &irqL);
+	pxmitpriv->free_xmitbuf_cnt++;
+	#ifdef DBG_XMIT_BUF
+	DBG_871X("DBG_XMIT_BUF FREE no=%d, free_xmitbuf_cnt=%d\n",pxmitbuf->no ,pxmitpriv->free_xmitbuf_cnt);
+	#endif
+	_exit_critical(&queue->lock, &irqL);
 
 exit:
 

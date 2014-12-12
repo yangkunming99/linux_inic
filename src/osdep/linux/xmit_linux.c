@@ -151,20 +151,11 @@ do_gettimeofday(&time_out);
 		DBG_871X("%s(): pxmitbuf allocated failed!\n", __FUNCTION__);
 		goto drop_packet;
 	}
-//	pxmitbuf->pkt_len = pkt->len+SIZE_AT_CMD_DESC+ SIZE_TX_DESC_8195a;
-//	pxmitbuf->ptxdesc->txpktsize=pkt->len+SIZE_AT_CMD_DESC;
-//	pxmitbuf->patcmd->datatype = 0;
-//	pxmitbuf->patcmd->pktsize = pkt->len;
-//	_rtw_memcpy(pxmitbuf->pdata+sizeof(TX_DESC)+sizeof(AT_CMD_DESC), pkt->data, pkt->len);	
-//_enter_critical_bh(&pxmitpriv->xmitbuf_pending_queue.lock, &irqL);
-//	rtw_list_insert_tail(&pxmitbuf->list, get_list_head(&pxmitpriv->xmitbuf_pending_queue));
-//_exit_critical_bh(&pxmitpriv->xmitbuf_pending_queue.lock, &irqL);
-//	pnetdev->stats.tx_packets=(++(padapter->stats.tx_packets));
-//	pnetdev->stats.tx_bytes=(padapter->stats.tx_bytes+=pkt->len);
+	
 	pxmitbuf->pkt = pkt;
 	if (rtw_hal_xmit(padapter, pxmitbuf) == _FALSE)
 		goto drop_packet;
-//	_rtw_up_sema(&pxmitpriv->xmit_sema);
+
 	goto exit;
 
 drop_packet:
