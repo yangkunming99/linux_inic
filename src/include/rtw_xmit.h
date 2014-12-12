@@ -46,6 +46,28 @@ struct xmit_buf
 	u8 *pend;
 #endif
 
+	
+#ifdef CONFIG_USB_HCI
+
+#if defined(PLATFORM_OS_XP)||defined(PLATFORM_LINUX) || defined(PLATFORM_FREEBSD)
+	PURB	pxmit_urb[8];
+	dma_addr_t dma_transfer_addr;	/* (in) dma addr for transfer_buffer */
+#endif
+
+#ifdef PLATFORM_OS_XP
+	PIRP		pxmit_irp[8];
+#endif
+
+#ifdef PLATFORM_OS_CE
+	USB_TRANSFER	usb_transfer_write_port;
+#endif
+
+	u8 bpending[8];
+
+	sint last[8];
+
+#endif
+
 };
 struct xmit_priv
 {
