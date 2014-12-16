@@ -17,13 +17,31 @@
  *
  *
  ******************************************************************************/
-#ifndef __RECV_OSDEP_H_
-#define __RECV_OSDEP_H_
-#include "drv_types.h"
-extern int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf);
-extern int rtw_recv_indicatepkt(_adapter *padapter, struct recv_buf *precvbuf);
+#ifndef __USB_OPS_LINUX_H__
+#define __USB_OPS_LINUX_H__
 
-int rtw_os_recvbuf_resource_alloc(_adapter *padapter, struct recv_buf *precvbuf);
-int rtw_os_recvbuf_resource_free(_adapter *padapter, struct recv_buf *precvbuf);
+#define VENDOR_CMD_MAX_DATA_LEN	254
+#define FW_START_ADDRESS	0x1000
 
+#define RTW_USB_CONTROL_MSG_TIMEOUT_TEST	10//ms
+#define RTW_USB_CONTROL_MSG_TIMEOUT	500//ms
+
+#define RECV_BULK_IN_ADDR		0x80//assign by drv,not real address 
+#define RECV_INT_IN_ADDR		0x81//assign by drv,not real address 
+
+
+#define RTW_USB_BULKOUT_TIMEOUT	5000//ms
+
+unsigned int ffaddr2pipehdl(struct dvobj_priv *pdvobj, u32 addr);
+
+void usb_read_mem(PADAPTER padapter, u32 addr, u32 cnt, u8 *rmem);
+void usb_write_mem(PADAPTER padapter, u32 addr, u32 cnt, u8 *wmem);
+
+void usb_read_port_cancel(PADAPTER padapter);
+
+u32 usb_write_port(PADAPTER padapter, u32 addr, u32 cnt, u8 *wmem);
+void usb_write_port_cancel(PADAPTER padapter);
+
+int usbctrl_vendorreq(PADAPTER padapter, u8 request, u16 value, u16 index, void *pdata, u16 len, u8 requesttype);
 #endif
+

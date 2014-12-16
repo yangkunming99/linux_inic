@@ -83,6 +83,7 @@ s32 rtw_init_xmit_priv(PADAPTER padapter)
 	
 	_rtw_init_queue(&pxmitpriv->free_xmit_queue);
 	_rtw_init_queue(&pxmitpriv->xmitbuf_pending_queue);
+	_rtw_spinlock_init(&pxmitpriv->lock_sctx);
 	_rtw_init_sema(&pxmitpriv->xmit_sema, 0);
 	//_rtw_init_sema(&padapter->XmitTerminateSema, 0);
 	
@@ -126,6 +127,19 @@ s32 rtw_init_xmit_priv(PADAPTER padapter)
 		pxmitbuf++;
 	}
 	pxmitpriv->free_xmitbuf_cnt = NR_XMITBUFF;
+
+#ifdef CONFIG_USB_HCI
+		pxmitpriv->txirp_cnt=1;
+	
+		_rtw_init_sema(&(pxmitpriv->tx_retevt), 0);
+	
+		//per AC pending irp
+		pxmitpriv->beq_cnt = 0;
+		pxmitpriv->bkq_cnt = 0;
+		pxmitpriv->viq_cnt = 0;
+		pxmitpriv->voq_cnt = 0;
+#endif
+
 	if((res = rtw_hal_init_xmit_priv(padapter)) == _FAIL)
 		goto free_os_resource;
 	

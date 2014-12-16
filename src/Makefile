@@ -6,8 +6,8 @@ EXTRA_CFLAGS += -I$(src)/include
 CONFIG_RTL8195A = y
 
 ######################### Interface ###########################
-CONFIG_USB_HCI = n
-CONFIG_SDIO_HCI = y
+CONFIG_USB_HCI = y
+CONFIG_SDIO_HCI = n
 
 ###############################################################
 export TopDIR ?= $(shell pwd)
@@ -48,10 +48,7 @@ _HAL_INTFS_FILES +=	 \
 			hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_xmit.o \
 			hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_NAME)_recv.o
 
-ifeq ($(CONFIG_SDIO_HCI), y)
 _HAL_INTFS_FILES += hal/$(RTL871X)/$(HCI_NAME)/$(HCI_NAME)_ops.o
-endif
-
 endif
 
 #######################################################

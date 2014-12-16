@@ -10,6 +10,23 @@ struct recv_priv
 	PADAPTER adapter;
 	u8 *pallocated_recv_buf;
 	u8 *precv_buf;
+
+#ifdef CONFIG_USB_HCI
+		//u8 *pallocated_urb_buf;
+		_sema allrxreturnevt;
+		uint	ff_hwaddr;
+		u8	rx_pending_cnt;
+	
+#ifdef CONFIG_USB_INTERRUPT_IN_PIPE
+#ifdef PLATFORM_LINUX
+		PURB	int_in_urb;
+#endif
+	
+		u8	*int_in_buf;
+#endif //CONFIG_USB_INTERRUPT_IN_PIPE
+	
+#endif
+
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_FREEBSD)
 #ifdef PLATFORM_FREEBSD
 	struct task recv_tasklet;
@@ -17,6 +34,10 @@ struct recv_priv
 	struct tasklet_struct recv_tasklet;
 #endif
 #endif
+
+	struct sk_buff_head free_recv_skb_queue;
+	struct sk_buff_head rx_skb_queue;
+
 	u32 free_recv_buf_queue_cnt;
 	_queue free_recv_buf_queue;
 	_queue recv_buf_pending_queue;
@@ -34,6 +55,32 @@ struct recv_buf
 	u8	*pdata;
 	u8	*ptail;
 	u8	*pend;
+	
+	u8	*pbuf;
+	u8	*pallocated_buf;
+	u32 ref_cnt;
+
+	
+#ifdef CONFIG_USB_HCI
+	
+	#if defined(PLATFORM_OS_XP)||defined(PLATFORM_LINUX)||defined(PLATFORM_FREEBSD)
+		PURB	purb;
+		dma_addr_t dma_transfer_addr;	/* (in) dma addr for transfer_buffer */
+		u32 alloc_sz;
+	#endif
+	
+	#ifdef PLATFORM_OS_XP
+		PIRP		pirp;
+	#endif
+	
+	#ifdef PLATFORM_OS_CE
+		USB_TRANSFER	usb_transfer_read_port;
+	#endif
+	
+		u8	irp_pending;
+		int  transfer_len;
+	
+#endif
 #ifdef PLATFORM_LINUX
 	_pkt *pskb;
 #endif

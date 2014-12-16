@@ -56,4 +56,77 @@ _func_exit_;
 	 return _FAIL;
 }
 
+//alloc os related resource in struct recv_buf
+int rtw_os_recvbuf_resource_alloc(_adapter *padapter, struct recv_buf *precvbuf)
+{
+	int res=_SUCCESS;
+
+#ifdef CONFIG_USB_HCI
+	struct dvobj_priv	*pdvobjpriv = padapter->dvobj;
+	struct usb_device	*pusbd = pdvobjpriv->pusbdev;
+
+	precvbuf->irp_pending = _FALSE;
+	precvbuf->purb = usb_alloc_urb(0, GFP_KERNEL);
+	if(precvbuf->purb == NULL){
+		res = _FAIL;
+	}
+
+	precvbuf->pskb = NULL;
+
+//	precvbuf->reuse = _FALSE;
+
+	precvbuf->pallocated_buf  = precvbuf->pbuf = NULL;
+
+	precvbuf->pdata = precvbuf->phead = precvbuf->ptail = precvbuf->pend = NULL;
+
+	precvbuf->transfer_len = 0;
+
+	precvbuf->len = 0;
+
+	#ifdef CONFIG_USE_USB_BUFFER_ALLOC_RX
+	precvbuf->pallocated_buf = rtw_usb_buffer_alloc(pusbd, (size_t)precvbuf->alloc_sz, &precvbuf->dma_transfer_addr);
+	precvbuf->pbuf = precvbuf->pallocated_buf;
+	if(precvbuf->pallocated_buf == NULL)
+		return _FAIL;
+	#endif //CONFIG_USE_USB_BUFFER_ALLOC_RX
+	
+#endif //CONFIG_USB_HCI
+
+	return res;
+}
+
+//free os related resource in struct recv_buf
+int rtw_os_recvbuf_resource_free(_adapter *padapter, struct recv_buf *precvbuf)
+{
+	int ret = _SUCCESS;
+
+#ifdef CONFIG_USB_HCI
+
+#ifdef CONFIG_USE_USB_BUFFER_ALLOC_RX
+
+	struct dvobj_priv	*pdvobjpriv = padapter->dvobj;
+	struct usb_device	*pusbd = pdvobjpriv->pusbdev;
+
+	rtw_usb_buffer_free(pusbd, (size_t)precvbuf->alloc_sz, precvbuf->pallocated_buf, precvbuf->dma_transfer_addr);
+	precvbuf->pallocated_buf =  NULL;
+	precvbuf->dma_transfer_addr = 0;
+
+#endif //CONFIG_USE_USB_BUFFER_ALLOC_RX
+
+	if(precvbuf->purb)
+	{
+		//usb_kill_urb(precvbuf->purb);
+		usb_free_urb(precvbuf->purb);
+	}
+
+#endif //CONFIG_USB_HCI
+
+
+	if(precvbuf->pskb)
+		rtw_skb_free(precvbuf->pskb);
+
+
+	return ret;
+
+}
 

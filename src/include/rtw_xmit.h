@@ -46,7 +46,8 @@ struct xmit_buf
 	u8 *pend;
 #endif
 
-	
+struct submit_ctx *sctx;
+
 #ifdef CONFIG_USB_HCI
 
 #if defined(PLATFORM_OS_XP)||defined(PLATFORM_LINUX) || defined(PLATFORM_FREEBSD)
@@ -88,6 +89,32 @@ struct xmit_priv
 
 	_sema xmit_sema;
 	_thread_hdl_ xmitThread;
+
+	
+#ifdef CONFIG_USB_HCI
+		_sema	tx_retevt;//all tx return event;
+		u8		txirp_cnt;//
+	
+#ifdef PLATFORM_OS_CE
+		USB_TRANSFER	usb_transfer_write_port;
+	//	USB_TRANSFER	usb_transfer_write_mem;
+#endif
+#ifdef PLATFORM_LINUX
+		struct tasklet_struct xmit_tasklet;
+#endif
+#ifdef PLATFORM_FREEBSD
+		struct task xmit_tasklet;
+#endif
+		//per AC pending irp
+		int beq_cnt;
+		int bkq_cnt;
+		int viq_cnt;
+		int voq_cnt;
+	
+#endif
+
+	_lock lock_sctx;
+
 };
 #define XMITBUF_ALIGN_SZ		4
 
