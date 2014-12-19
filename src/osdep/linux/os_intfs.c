@@ -2,6 +2,23 @@
 #include "rtw_xmit.h"
 #include "xmit_osdep.h"
 #define _OS_INTFS_C_
+
+
+#ifdef CONFIG_FILE_FWIMG
+
+char *rtw_fw_file_path = "/system/etc/firmware/rtlwifi/FW_NIC.BIN";
+module_param(rtw_fw_file_path, charp, 0644);
+MODULE_PARM_DESC(rtw_fw_file_path, "The path of fw image");
+
+char *rtw_fw_wow_file_path = "/system/etc/firmware/rtlwifi/FW_WoWLAN.BIN";
+module_param(rtw_fw_wow_file_path, charp, 0644);
+MODULE_PARM_DESC(rtw_fw_wow_file_path, "The path of fw for Wake on Wireless image");
+
+#endif // CONFIG_FILE_FWIMG
+
+
+
+
 struct dvobj_priv *devobj_init(void)
 {
 	struct dvobj_priv *pdvobj = NULL;

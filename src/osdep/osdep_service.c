@@ -2,13 +2,35 @@
 #include "autoconf.h"
 #include "basic_types.h"
 #include "osdep_service.h"
-
+#include "rtw_debug.h"
 #ifdef DBG_MEMORY_LEAK
 #ifdef PLATFORM_LINUX
 atomic_t _malloc_cnt = ATOMIC_INIT(0);
 atomic_t _malloc_size = ATOMIC_INIT(0);
 #endif
 #endif /* DBG_MEMORY_LEAK */
+
+#if defined(PLATFORM_LINUX)
+/*
+* Translate the OS dependent @param error_code to OS independent RTW_STATUS_CODE
+* @return: one of RTW_STATUS_CODE
+*/
+inline int RTW_STATUS_CODE(int error_code){
+	if(error_code >=0)
+		return _SUCCESS;
+
+	switch(error_code) {
+		//case -ETIMEDOUT:
+		//	return RTW_STATUS_TIMEDOUT;
+		default:
+			return _FAIL;
+	}
+}
+#else//PLATFORM_LINUX
+inline int RTW_STATUS_CODE(int error_code){
+	return error_code;
+}
+#endif//PLATFORM_LINUX
 
 inline u8* _rtw_vmalloc(u32 sz)
 {
@@ -786,6 +808,47 @@ u32	rtw_get_current_time(void)
 	return (u32)(SystemTime.LowPart);// count of 100-nanosecond intervals 
 #endif
 }
+inline u32 rtw_systime_to_ms(u32 systime)
+{
+#ifdef PLATFORM_LINUX
+	return systime * 1000 / HZ;
+#endif	
+#ifdef PLATFORM_FREEBSD
+	return systime * 1000;
+#endif	
+#ifdef PLATFORM_WINDOWS
+	return systime / 10000 ; 
+#endif
+}
+
+inline u32 rtw_ms_to_systime(u32 ms)
+{
+#ifdef PLATFORM_LINUX
+	return ms * HZ / 1000;
+#endif	
+#ifdef PLATFORM_FREEBSD
+	return ms /1000;
+#endif	
+#ifdef PLATFORM_WINDOWS
+	return ms * 10000 ; 
+#endif
+}
+
+// the input parameter start use the same unit as returned by rtw_get_current_time
+inline s32 rtw_get_passing_time_ms(u32 start)
+{
+#ifdef PLATFORM_LINUX
+	return rtw_systime_to_ms(jiffies-start);
+#endif
+#ifdef PLATFORM_FREEBSD
+	return rtw_systime_to_ms(rtw_get_current_time());
+#endif	
+#ifdef PLATFORM_WINDOWS
+	LARGE_INTEGER	SystemTime;
+	NdisGetCurrentSystemTime(&SystemTime);
+	return rtw_systime_to_ms((u32)(SystemTime.LowPart) - start) ;
+#endif
+}
 
 void rtw_msleep_os(int ms)
 {
@@ -835,6 +898,18 @@ void rtw_usleep_os(int us)
 
 }
 
+void rtw_yield_os()
+{
+#ifdef PLATFORM_LINUX
+	yield();
+#endif
+#ifdef PLATFORM_FREEBSD
+	yield();
+#endif
+#ifdef PLATFORM_WINDOWS
+	SwitchToThread();
+#endif
+}
 
 inline void ATOMIC_SET(ATOMIC_T *v, int i)
 {
@@ -949,6 +1024,234 @@ inline int ATOMIC_DEC_RETURN(ATOMIC_T *v)
 	#endif
 }
 
+#ifdef PLATFORM_LINUX
+/*
+* Open a file with the specific @param path, @param flag, @param mode
+* @param fpp the pointer of struct file pointer to get struct file pointer while file opening is success
+* @param path the path of the file to open
+* @param flag file operation flags, please refer to linux document
+* @param mode please refer to linux document
+* @return Linux specific error code
+*/
+static int openFile(struct file **fpp, char *path, int flag, int mode) 
+{ 
+	struct file *fp; 
+ 
+	fp=filp_open(path, flag, mode); 
+	if(IS_ERR(fp)) {
+		*fpp=NULL;
+		return PTR_ERR(fp);
+	}
+	else {
+		*fpp=fp; 
+		return 0;
+	}	
+}
+
+/*
+* Close the file with the specific @param fp
+* @param fp the pointer of struct file to close
+* @return always 0
+*/
+static int closeFile(struct file *fp) 
+{ 
+	filp_close(fp,NULL);
+	return 0; 
+}
+
+static int readFile(struct file *fp,char *buf,int len) 
+{ 
+	int rlen=0, sum=0;
+	
+	if (!fp->f_op || !fp->f_op->read) 
+		return -EPERM;
+
+	while(sum<len) {
+		rlen=fp->f_op->read(fp,buf+sum,len-sum, &fp->f_pos);
+		if(rlen>0)
+			sum+=rlen;
+		else if(0 != rlen)
+			return rlen;
+		else
+			break;
+	}
+	
+	return  sum;
+
+}
+
+static int writeFile(struct file *fp,char *buf,int len) 
+{ 
+	int wlen=0, sum=0;
+	
+	if (!fp->f_op || !fp->f_op->write) 
+		return -EPERM; 
+
+	while(sum<len) {
+		wlen=fp->f_op->write(fp,buf+sum,len-sum, &fp->f_pos);
+		if(wlen>0)
+			sum+=wlen;
+		else if(0 != wlen)
+			return wlen;
+		else
+			break;
+	}
+
+	return sum;
+
+}
+
+/*
+* Test if the specifi @param path is a file and readable
+* @param path the path of the file to test
+* @return Linux specific error code
+*/
+static int isFileReadable(char *path)
+{ 
+	struct file *fp;
+	int ret = 0;
+	mm_segment_t oldfs;
+	char buf;
+ 
+	fp=filp_open(path, O_RDONLY, 0); 
+	if(IS_ERR(fp)) {
+		ret = PTR_ERR(fp);
+	}
+	else {
+		oldfs = get_fs(); set_fs(get_ds());
+		
+		if(1!=readFile(fp, &buf, 1))
+			ret = PTR_ERR(fp);
+		
+		set_fs(oldfs);
+		filp_close(fp,NULL);
+	}	
+	return ret;
+}
+
+/*
+* Open the file with @param path and retrive the file content into memory starting from @param buf for @param sz at most
+* @param path the path of the file to open and read
+* @param buf the starting address of the buffer to store file content
+* @param sz how many bytes to read at most
+* @return the byte we've read, or Linux specific error code
+*/
+static int retriveFromFile(char *path, u8* buf, u32 sz)
+{
+	int ret =-1;
+	mm_segment_t oldfs;
+	struct file *fp;
+
+	if(path && buf) {
+		if( 0 == (ret=openFile(&fp,path, O_RDONLY, 0)) ){
+			DBG_871X("%s openFile path:%s fp=%p\n",__FUNCTION__, path ,fp);
+
+			oldfs = get_fs(); set_fs(get_ds());
+			ret=readFile(fp, buf, sz);
+			set_fs(oldfs);
+			closeFile(fp);
+			
+			DBG_871X("%s readFile, ret:%d\n",__FUNCTION__, ret);
+			
+		} else {
+			DBG_871X("%s openFile path:%s Fail, ret:%d\n",__FUNCTION__, path, ret);
+		}
+	} else {
+		DBG_871X("%s NULL pointer\n",__FUNCTION__);
+		ret =  -EINVAL;
+	}
+	return ret;
+}
+
+/*
+* Open the file with @param path and wirte @param sz byte of data starting from @param buf into the file
+* @param path the path of the file to open and write
+* @param buf the starting address of the data to write into file
+* @param sz how many bytes to write at most
+* @return the byte we've written, or Linux specific error code
+*/
+static int storeToFile(char *path, u8* buf, u32 sz)
+{
+	int ret =0;
+	mm_segment_t oldfs;
+	struct file *fp;
+	
+	if(path && buf) {
+		if( 0 == (ret=openFile(&fp, path, O_CREAT|O_WRONLY, 0666)) ) {
+			DBG_871X("%s openFile path:%s fp=%p\n",__FUNCTION__, path ,fp);
+
+			oldfs = get_fs(); set_fs(get_ds());
+			ret=writeFile(fp, buf, sz);
+			set_fs(oldfs);
+			closeFile(fp);
+
+			DBG_871X("%s writeFile, ret:%d\n",__FUNCTION__, ret);
+			
+		} else {
+			DBG_871X("%s openFile path:%s Fail, ret:%d\n",__FUNCTION__, path, ret);
+		}	
+	} else {
+		DBG_871X("%s NULL pointer\n",__FUNCTION__);
+		ret =  -EINVAL;
+	}
+	return ret;
+}
+#endif //PLATFORM_LINUX
+
+
+/*
+* Test if the specifi @param path is a file and readable
+* @param path the path of the file to test
+* @return _TRUE or _FALSE
+*/
+int rtw_is_file_readable(char *path)
+{
+#ifdef PLATFORM_LINUX
+	if(isFileReadable(path) == 0)
+		return _TRUE;
+	else
+		return _FALSE;
+#else
+	//Todo...
+	return _FALSE;
+#endif
+}
+
+/*
+* Open the file with @param path and retrive the file content into memory starting from @param buf for @param sz at most
+* @param path the path of the file to open and read
+* @param buf the starting address of the buffer to store file content
+* @param sz how many bytes to read at most
+* @return the byte we've read
+*/
+int rtw_retrive_from_file(char *path, u8* buf, u32 sz)
+{
+#ifdef PLATFORM_LINUX
+	int ret =retriveFromFile(path, buf, sz);
+	return ret>=0?ret:0;
+#else
+	//Todo...
+	return 0;
+#endif
+}
+
+/*
+* Open the file with @param path and wirte @param sz byte of data starting from @param buf into the file
+* @param path the path of the file to open and write
+* @param buf the starting address of the data to write into file
+* @param sz how many bytes to write at most
+* @return the byte we've written
+*/
+int rtw_store_to_file(char *path, u8* buf, u32 sz)
+{
+#ifdef PLATFORM_LINUX
+	int ret =storeToFile(path, buf, sz);
+	return ret>=0?ret:0;
+#else
+	//Todo...
+	return 0;
+#endif
+}
 
 
 #ifdef PLATFORM_LINUX

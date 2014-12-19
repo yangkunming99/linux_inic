@@ -150,6 +150,7 @@ __inline static u32 _RND4(u32 sz)
 #define SIZE_PTR SIZE_T
 #define SSIZE_PTR SSIZE_T
 
+typedef unsigned char	BOOLEAN,*PBOOLEAN;
 // Get the N-bytes aligment offset from the current length
 #define N_BYTE_ALIGMENT(__Value, __Aligment) ((__Aligment == 1) ? (__Value) : (((__Value + __Aligment - 1) / __Aligment) * __Aligment))
 
