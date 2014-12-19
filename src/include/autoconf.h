@@ -33,8 +33,8 @@
 #define CONFIG_USE_VMALLOC
 #define CONFIG_RTL8195A
 
-//#define CONFIG_SDIO_HCI
-#define CONFIG_USB_HCI
+#define CONFIG_SDIO_HCI
+//#define CONFIG_USB_HCI
 #ifdef CONFIG_USB_HCI
 #define USB_WRITE_ADD 	0
 #define USB_READ_ADD	1
