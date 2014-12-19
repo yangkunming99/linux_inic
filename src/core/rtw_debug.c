@@ -2,6 +2,9 @@
 
 #include <drv_types.h>
 
+u8 g_fwdl_chksum_fail = 0;
+u8 g_fwdl_wintint_rdy_fail = 0;
+
 u32 GlobalDebugLevel = _drv_debug_;
 
 #ifdef CONFIG_DEBUG_RTL871X

@@ -138,6 +138,12 @@ struct _ADAPTER
 	struct net_device_stats stats;
 #endif
 	u16	interface_type;//USB,SDIO
+
+	u16	FirmwareVersion;
+	u16	FirmwareVersionRev;
+	u16	FirmwareSubVersion;
+	u16	FirmwareSignature;
+
 	struct dvobj_priv *dvobj;
 	//For xmit priv
 	struct xmit_priv xmitpriv;

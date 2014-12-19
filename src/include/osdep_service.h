@@ -62,7 +62,7 @@
 #define BIT29	0x20000000
 #define BIT30	0x40000000
 #define BIT31	0x80000000
-
+extern int RTW_STATUS_CODE(int error_code);
 u8*	_rtw_vmalloc(u32 sz);
 u8*	_rtw_zvmalloc(u32 sz);
 void	_rtw_vmfree(u8 *pbuf, u32 sz);
@@ -142,10 +142,14 @@ extern u32	_rtw_queue_empty(_queue	*pqueue);
 extern u32	rtw_end_of_queue_search(_list *queue, _list *pelement);
 
 extern u32	rtw_get_current_time(void);
+extern u32	rtw_systime_to_ms(u32 systime);
+extern u32	rtw_ms_to_systime(u32 ms);
+extern s32	rtw_get_passing_time_ms(u32 start);
+extern s32	rtw_get_time_interval_ms(u32 start, u32 end);
 
 extern void	rtw_msleep_os(int ms);
 extern void	rtw_usleep_os(int us);
-
+extern void rtw_yield_os(void);
 static __inline void thread_enter(char *name)
 {
 #ifdef PLATFORM_LINUX

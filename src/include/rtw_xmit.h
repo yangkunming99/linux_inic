@@ -122,8 +122,7 @@ struct xmit_priv
 #define MAX_XMITBUF_SZ	(20480)	// 20k
 #define NR_XMITBUFF	(16)
 #else
-#define NR_XMITFRAME			128
-#define NR_XMITBUFF				128
+#define NR_XMITBUFF				8
 #define MAX_XMITBUF_SZ (1664)
 #define SDIO_TX_AGG_MAX	1
 #endif

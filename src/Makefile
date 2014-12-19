@@ -42,6 +42,7 @@ ifeq ($(CONFIG_USB_HCI), y)
 MODULE_NAME = 8195au
 endif
 
+_HAL_INTFS_FILES +=	hal/$(RTL871X)/$(RTL871X)_hal_init.o \
 
 _HAL_INTFS_FILES +=	 \
 			hal/$(RTL871X)/$(HCI_NAME)/$(HCI_NAME)_halinit.o \

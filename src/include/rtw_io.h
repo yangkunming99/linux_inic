@@ -33,9 +33,37 @@ struct _io_ops
 
 int rtw_inc_and_chk_continual_io_error(struct dvobj_priv *dvobj);
 void rtw_reset_continual_io_error(struct dvobj_priv *dvobj);
-u32 rtw_write_port(PADAPTER padapter, u32 addr, u32 cnt, u8 *pmem);
-void rtw_write_port_cancel(_adapter *adapter);
-u32 rtw_read_port(_adapter *adapter, u32 addr, u32 cnt, u8 *pmem);
-void rtw_read_port_cancel(_adapter *adapter);
+
+u8 _rtw_read8(_adapter *adapter, u32 addr);
+u16 _rtw_read16(_adapter *adapter, u32 addr);
+u32 _rtw_read32(_adapter *adapter, u32 addr);
+void _rtw_read_mem(_adapter *adapter, u32 addr, u32 cnt, u8 *pmem);
+u32 _rtw_read_port(_adapter *adapter, u32 addr, u32 cnt, u8 *pmem);
+void _rtw_read_port_cancel(_adapter *adapter);
+
+int _rtw_write8(_adapter *adapter, u32 addr, u8 val);
+int _rtw_write16(_adapter *adapter, u32 addr, u16 val);
+int _rtw_write32(_adapter *adapter, u32 addr, u32 val);
+int _rtw_writeN(_adapter *adapter, u32 addr, u32 length, u8 *pdata);
+
+u8 _rtw_sd_f0_read8(_adapter *adapter, u32 addr);
+
+u32 _rtw_write_port(_adapter *adapter, u32 addr, u32 cnt, u8 *pmem);
+void _rtw_write_port_cancel(_adapter *adapter);
+
+#define rtw_read8(adapter, addr) _rtw_read8((adapter), (addr))
+#define rtw_read16(adapter, addr) _rtw_read16((adapter), (addr))
+#define rtw_read32(adapter, addr) _rtw_read32((adapter), (addr))
+#define rtw_read_mem(adapter, addr, cnt, mem) _rtw_read_mem((adapter), (addr), (cnt), (mem))
+#define rtw_read_port(adapter, addr, cnt, mem) _rtw_read_port((adapter), (addr), (cnt), (mem))
+#define rtw_read_port_cancel(adapter) _rtw_read_port_cancel((adapter))
+
+#define  rtw_write8(adapter, addr, val) _rtw_write8((adapter), (addr), (val))
+#define  rtw_write16(adapter, addr, val) _rtw_write16((adapter), (addr), (val))
+#define  rtw_write32(adapter, addr, val) _rtw_write32((adapter), (addr), (val))
+#define  rtw_writeN(adapter, addr, length, data) _rtw_writeN((adapter), (addr), (length), (data))
+
+#define rtw_write_port(adapter, addr, cnt, mem) _rtw_write_port((adapter), (addr), (cnt), (mem))
+#define rtw_write_port_cancel(adapter) _rtw_write_port_cancel((adapter))
 
 #endif
