@@ -59,10 +59,10 @@ int	rtl8195au_init_recv_priv(_adapter *padapter)
 
 	//init recv_buf
 	_rtw_init_queue(&precvpriv->free_recv_buf_queue);
-
 #ifdef CONFIG_USE_USB_BUFFER_ALLOC_RX
 	_rtw_init_queue(&precvpriv->recv_buf_pending_queue);
 #endif	// CONFIG_USE_USB_BUFFER_ALLOC_RX
+
 
 	precvpriv->pallocated_recv_buf = rtw_zmalloc(NR_RECVBUFF *sizeof(struct recv_buf) + 4);
 	if(precvpriv->pallocated_recv_buf==NULL){
@@ -101,9 +101,8 @@ int	rtl8195au_init_recv_priv(_adapter *padapter)
 	precvpriv->free_recv_buf_queue_cnt = NR_RECVBUFF;
 
 #ifdef PLATFORM_LINUX
-
-//	skb_queue_head_init(&precvpriv->rx_skb_queue);
-
+	skb_queue_head_init(&precvpriv->rx_skb_queue);
+#if 0
 #ifdef CONFIG_PREALLOC_RECV_SKB
 	{
 		int i;
@@ -133,7 +132,7 @@ int	rtl8195au_init_recv_priv(_adapter *padapter)
 		}
 	}
 #endif
-
+#endif
 #endif
 
 exit:

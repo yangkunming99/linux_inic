@@ -46,13 +46,21 @@ s32 rtl8195au_hal_xmit(PADAPTER padapter, struct xmit_buf *pxmitbuf)
 	struct xmit_priv 	*pxmitpriv = &padapter->xmitpriv;
 	_irqL irqL;
 	_pkt *pkt = pxmitbuf->pkt;
+	PAT_CMD_DESC patcmd;
+
 	if(pkt == NULL)
 		return _FALSE;
+	patcmd = (PAT_CMD_DESC)(pxmitbuf->pbuf);
 	/* copy skb from pbuf and free pkt*/
-	pxmitbuf->pkt_len = pkt->len; 
-	_rtw_memcpy(pxmitbuf->pbuf, pkt->data, pkt->len);	
+	patcmd->datatype = 0;
+	patcmd->pktsize = pkt->len;
+	patcmd->offset = SIZE_AT_CMD_DESC;
+	
+	pxmitbuf->pkt_len = pkt->len+SIZE_AT_CMD_DESC; 
+	_rtw_memcpy(pxmitbuf->pbuf+SIZE_AT_CMD_DESC, pkt->data, pkt->len);	
 	pxmitbuf->pkt = NULL;
-
+	rtw_skb_free(pkt);
+	
 	_enter_critical_bh(&pxmitpriv->xmitbuf_pending_queue.lock, &irqL);
 	rtw_list_insert_tail(&pxmitbuf->list, get_list_head(&pxmitpriv->xmitbuf_pending_queue));
 	_exit_critical_bh(&pxmitpriv->xmitbuf_pending_queue.lock, &irqL);

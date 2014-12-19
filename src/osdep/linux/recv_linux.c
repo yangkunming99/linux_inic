@@ -8,6 +8,7 @@
 
 void rtw_os_recv_indicate_pkt(_adapter *padapter, _pkt *pkt)
 {
+
 	/* Indicat the packets to upper layer */
 	if (pkt) {
 		pkt->protocol = eth_type_trans(pkt, padapter->pnetdev);
@@ -82,13 +83,14 @@ int rtw_os_recvbuf_resource_alloc(_adapter *padapter, struct recv_buf *precvbuf)
 	precvbuf->transfer_len = 0;
 
 	precvbuf->len = 0;
-
-	#ifdef CONFIG_USE_USB_BUFFER_ALLOC_RX
+	
+#ifdef CONFIG_USE_USB_BUFFER_ALLOC_RX
 	precvbuf->pallocated_buf = rtw_usb_buffer_alloc(pusbd, (size_t)precvbuf->alloc_sz, &precvbuf->dma_transfer_addr);
 	precvbuf->pbuf = precvbuf->pallocated_buf;
 	if(precvbuf->pallocated_buf == NULL)
 		return _FAIL;
-	#endif //CONFIG_USE_USB_BUFFER_ALLOC_RX
+#endif //CONFIG_USE_USB_BUFFER_ALLOC_RX
+
 	
 #endif //CONFIG_USB_HCI
 

@@ -156,39 +156,6 @@ static int rtl8195a_get_pipes(struct dvobj_priv *pdvobjpriv)
 	return 0;
 }
 
-static int alloc_all_urbs(struct dvobj_priv *pdvobjpriv)
-{
-	pdvobjpriv->rx_urb = usb_alloc_urb(0, GFP_KERNEL);
-	if (!pdvobjpriv->rx_urb)
-		return 0;
-	pdvobjpriv->tx_urb = usb_alloc_urb(0, GFP_KERNEL);
-	if (!pdvobjpriv->tx_urb) {
-		usb_free_urb(pdvobjpriv->rx_urb);
-		return 0;
-	}
-//	pdvobjpriv->intr_urb = usb_alloc_urb(0, GFP_KERNEL);
-//	if (!pdvobjpriv->intr_urb) {
-//		usb_free_urb(pdvobjpriv->rx_urb);
-//		usb_free_urb(pdvobjpriv->tx_urb);
-//		return 0;
-//	}
-	return 1;
-}
-
-static void free_all_urbs(struct dvobj_priv *pdvobjpriv)
-{
-	usb_free_urb(pdvobjpriv->rx_urb);
-	usb_free_urb(pdvobjpriv->tx_urb);
-//	usb_free_urb(pdvobjpriv->intr_urb);
-}
-
-static void unlink_all_urbs(struct dvobj_priv *pdvobjpriv)
-{
-	usb_kill_urb(pdvobjpriv->rx_urb);
-	usb_kill_urb(pdvobjpriv->tx_urb);
-//	usb_kill_urb(pdvobjpriv->intr_urb);
-}
-
 static struct dvobj_priv *usb_dvobj_init(struct usb_interface *intf ){
 
 	struct dvobj_priv *pdvobjpriv;
@@ -301,10 +268,7 @@ static struct dvobj_priv *usb_dvobj_init(struct usb_interface *intf ){
 
 	if (rtl8195a_get_pipes(pdvobjpriv))
 		goto free_dvobj;
-	if (!alloc_all_urbs(pdvobjpriv)) {
-			DBG_871X("Cannot alloc urb, out of memory\n");
-			goto free_dvobj;
-		}
+	
 	usb_get_dev(pusbd);	
 	status = _SUCCESS;
 	
@@ -337,9 +301,6 @@ static void *usb_dvobj_deinit(struct usb_interface *intf ){
 			}
 		}
 #endif
-
-		unlink_all_urbs(dvobj);
-		free_all_urbs(dvobj);
 		
 		rtw_deinit_intf_priv(dvobj);
 		devobj_deinit(dvobj);		
@@ -356,126 +317,6 @@ static const struct usb_device_id rtl8195a_usb_ids[] =
 /* the number of entries in array above */
 int const rtl8195a_usb_id_len =
 	sizeof(rtl8195a_usb_ids) / sizeof(struct usb_device_id);
-#if 0
-static void usb_read_complete(struct urb *purb){
-	printk("read complete\n");
-}
-
-#define RECVBUF_SZ	512
-static int usb_read_data(PUSB_DATA pusb){
-	int status;
-	int pipe = pusb->recv_bulk_Pipe;
-	struct usb_device *dev = pusb->dev;
-	PURB purb = pusb->rx_urb;
-	int ret;
-	char *pbuf;
-
-	pbuf = usb_alloc_coherent(pusb->dev, RECVBUF_SZ, GFP_KERNEL,
-				 &purb->transfer_dma);
-	
-	usb_fill_bulk_urb(purb, dev, pipe, 
-						pbuf,
-            				RECVBUF_SZ,
-            				usb_read_complete,
-            				pusb);//context is precvbuf
-
-	purb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;								
-
-	status = usb_submit_urb(purb, GFP_ATOMIC);	
-	if((status) && (status != (-EPERM)))
-	{
-		printk("cannot submit rx in-token(status = 0x%x),urb_status = %d\n",status,purb->status);
-		ret = _FAIL;
-	}
-	else
-		printk("submit recv urb done\n");
-	return ret;
-}
-#endif	
-
-#if 0
-static void usb_send_complete(struct urb *purb){
-	struct completion *urb_done_ptr = purb->context;
-	complete(urb_done_ptr);
-	FUC_IN;
-}
-
-#define TEST_LEN	60
-int usb_send_data(PADAPTER padapter){	
-	int status;
-	int pipe = padapter->dvobj->send_bulk_Pipe;
-	char buff[TEST_LEN];
-	int retval = 0;
-	int timeleft;
-	char *buf;
-	struct completion urb_done;
-
-FUC_IN;
-	memset(buff, 0, TEST_LEN);
-	
-	buff[0] = 0xC4;
-	buff[1] = 0x6E;
-	buff[2] = 0x1F;
-	buff[3] = 0x58;
-	buff[4] = 0x42;
-	buff[5] = 0xBC;
-	// MAC Src address
-	buff[6] = 0x00;
-	buff[7] = 0xE0;
-	buff[8] = 0x4C;
-	buff[9] = 0x87;
-	buff[10] = 0x00;
-	buff[11] = 0x00;
-	// type 
-	//	0806: ARP protocol
-	//	0800: IP protocol
-	// 	8137: Novell IPX
-	// 	809b: Apple talk
-	buff[12] = 0x08;
-	buff[13] = 0x06;
-
-	init_completion(&urb_done);
-
-	buf = usb_alloc_coherent(padapter->dvobj->pusbdev, TEST_LEN, GFP_KERNEL,
-				 &padapter->dvobj->tx_urb->transfer_dma);
-	if (!buf) {
-		retval = -ENOMEM;
-		goto error;
-	}
-	_rtw_memcpy(buf,buff,TEST_LEN);
-	padapter->dvobj->tx_urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
-
-	/* this lock makes sure we don't submit URBs to gone devices */
-//	mutex_lock(&(pusb->io_mutex));
-FUC_TRACE;
-
-	usb_fill_bulk_urb(padapter->dvobj->tx_urb, padapter->dvobj->pusbdev, pipe, 
-       				 buf,
-              			TEST_LEN,
-              			usb_send_complete,
-              			&urb_done);//context is pxmitbuf
-
-    status = usb_submit_urb(padapter->dvobj->tx_urb, GFP_ATOMIC);
-	if (status) {
-		/* something went wrong */
-		DBG_871X("usb submit urb failed\n");
-		return status;
-	}
-//	mutex_unlock(&(pusb->io_mutex));
-
-	timeleft = wait_for_completion_interruptible_timeout(&urb_done,
-					1000);
-
-	if (timeleft <= 0) {
-		printk("%s-- cancelling URB\n",__FUNCTION__);
-		usb_kill_urb(&padapter->dvobj->tx_urb);
-	}
-FUC_OUT;
-error:	
-	return padapter->dvobj->tx_urb->status;
-
-}
-#endif
 
 int rtw_ndev_init(struct net_device *dev){
 
@@ -557,7 +398,8 @@ _adapter *rtw_usb_if1_init(struct dvobj_priv *dvobj,
 	dvobj->if1 = padapter;
 	padapter->interface_type = RTW_USB;
 	
-	padapter->bDriverStopped = _TRUE;
+	//padapter->bDriverStopped = _TRUE;
+	padapter->bDriverStopped = _FALSE;
 
 	
 	//3 1. init network device data
@@ -586,7 +428,7 @@ _adapter *rtw_usb_if1_init(struct dvobj_priv *dvobj,
 	mac_addr[2] = 0x4c;
 	mac_addr[3] = 0x87;
 	mac_addr[4] = 0x00;
-	mac_addr[5] = 0x00;
+	mac_addr[5] = 0x01;
 	_rtw_memcpy(pnetdev->dev_addr, mac_addr, ETH_ALEN);
 
 	status = _SUCCESS;
