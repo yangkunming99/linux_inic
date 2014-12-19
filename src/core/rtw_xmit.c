@@ -3,7 +3,6 @@
 #include "drv_types.h"
 #include "rtw_xmit.h"
 #include "rtw_ioctl.h"
-#include "sdio_ops.h"
 #include "hal_intf.h"
 #include "xmit_osdep.h"
 #define _RTW_XMIT_C_

@@ -80,7 +80,7 @@ void rtw_free_recv_priv(PADAPTER padapter)
 {
 	rtw_hal_free_recv_priv(padapter);
 }
-extern void DumpForOneBytes(IN u8 *pData, IN u8 Len);
+
 int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf)
 {
 	int ret = _SUCCESS;
@@ -121,12 +121,6 @@ int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf)
 			ret = _FAIL;
 			goto _recv_data_drop;
 		}
-/*
-		skb->protocol = eth_type_trans(skb, pnetdev);
-		skb->dev = pnetdev;
-		skb->ip_summed = CHECKSUM_NONE;
-		_rtw_netif_rx(pnetdev, skb);
-*/
 	}
 	else if(atcmddesc.datatype == MNGMT_FRAME)//cmd pkt
 	{
