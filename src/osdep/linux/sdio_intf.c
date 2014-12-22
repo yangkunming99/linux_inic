@@ -267,7 +267,7 @@ _adapter *rtw_sdio_if1_init(struct dvobj_priv *dvobj, const struct sdio_device_i
 	int status = _FAIL;
 	struct net_device *pnetdev;
 	PADAPTER padapter = NULL;
-	u8 mac_addr[ETH_ALEN];
+//	u8 mac_addr[ETH_ALEN];
 _func_enter_;
 	if ((padapter = (_adapter *)rtw_zvmalloc(sizeof(*padapter))) == NULL) {
 		DBG_871X("%s: vmalloc for padapter failed!\n", __FUNCTION__);
@@ -301,7 +301,7 @@ _func_enter_;
 	if (rtw_init_drv_sw(padapter) == _FAIL) {
 		goto free_adapter;
 	}
-
+/*
 	//5 5. get MAC address
 	mac_addr[0] = 0x00;
 	mac_addr[1] = 0xe0;
@@ -310,7 +310,7 @@ _func_enter_;
 	mac_addr[4] = 0x00;
 	mac_addr[5] = 0x00;
 	_rtw_memcpy(pnetdev->dev_addr, mac_addr, ETH_ALEN);
-	
+*/	
 	rtw_hal_disable_interrupt(padapter);
 	DBG_871X("bDriverStopped:%d, bSurpriseRemoved:%d, bup:%d\n"
 		,padapter->bDriverStopped

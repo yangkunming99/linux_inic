@@ -155,7 +155,8 @@ do_gettimeofday(&time_out);
 	pxmitbuf->pkt = pkt;
 	if (rtw_hal_xmit(padapter, pxmitbuf) == _FALSE)
 		goto drop_packet;
-
+	pxmitpriv->tx_pkts++;
+	pxmitpriv->tx_bytes+=pkt->len;
 	goto exit;
 
 drop_packet:

@@ -14,6 +14,7 @@
 
 #define RTL_IOCTL_ATCMD				(SIOCDEVPRIVATE+1)
 #define UART_LOG_CMD_BUFLEN 	64
+unsigned char dev[10] = {0};
 static void atcmd_ctl(char *pbuf, int len)
 {
 	int skfd, err;
@@ -24,7 +25,8 @@ static void atcmd_ctl(char *pbuf, int len)
 		perror("socket error");
 		exit(1);
 	}
-	memcpy(iwrq.ifr_ifrn.ifrn_name, "eth1", 5);
+	strcpy(iwrq.ifr_ifrn.ifrn_name, dev);
+	printf("Ioctl for dev: %s\n", iwrq.ifr_ifrn.ifrn_name);
 	iwrq.u.data.pointer = pbuf;
 	iwrq.u.data.length = len;
 	err = ioctl(skfd, RTL_IOCTL_ATCMD, &iwrq);
@@ -35,9 +37,14 @@ static void atcmd_ctl(char *pbuf, int len)
 	close(skfd);
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
 	char buf[UART_LOG_CMD_BUFLEN];
+	if(argc < 2){
+		printf("err: net device name must be given!\n");
+		return -1;
+	}
+	strcpy(dev, argv[1]);
 	do{
 		memset(buf, 0, sizeof(buf));
 		printf("\n\rWLAN: ");
