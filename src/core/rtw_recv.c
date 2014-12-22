@@ -89,6 +89,7 @@ int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf)
 	//_irqL irqL;
 	unsigned char attype[2];
 	struct cmd_priv *pcmdpriv;
+	unsigned char mac_addr[ETH_ALEN];
 	
 
 	_rtw_memcpy(&atcmddesc, precvbuf->pskb->data, SIZE_AT_CMD_DESC);
@@ -126,10 +127,16 @@ int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf)
 	{
 		pcmdpriv = &padapter->cmdpriv;
 		//check the at cmd type
-		_rtw_memcpy(&attype, precvbuf->pskb->data, 2);
+		_rtw_memcpy(&attype, precvbuf->pskb->data, SIZE_AT_CMD_TYPE);
+		//remove the at cmd type
+		skb_pull(precvbuf->pskb, SIZE_AT_CMD_TYPE);
 		if(_rtw_memcmp(attype, AT_CMD_wifi_linked, SIZE_AT_CMD_TYPE))
 		{
 			DBG_871X("%s: Ameba connected!\n", __FUNCTION__);
+			_rtw_memcpy(mac_addr, precvbuf->pskb->data, ETH_ALEN);
+			//remove the at cmd data
+			skb_pull(precvbuf->pskb, ETH_ALEN);
+			_rtw_memcpy(padapter->pnetdev->dev_addr, mac_addr, ETH_ALEN);
 			rtw_os_indicate_connect(padapter->pnetdev);
 		}
 		if(_rtw_memcmp(attype, AT_CMD_wifi_unlinked, SIZE_AT_CMD_TYPE))
