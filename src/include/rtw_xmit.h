@@ -95,16 +95,16 @@ struct xmit_priv
 		_sema	tx_retevt;//all tx return event;
 		u8		txirp_cnt;//
 	
-#ifdef PLATFORM_OS_CE
+	#ifdef PLATFORM_OS_CE
 		USB_TRANSFER	usb_transfer_write_port;
 	//	USB_TRANSFER	usb_transfer_write_mem;
-#endif
-#ifdef PLATFORM_LINUX
+	#endif
+	#ifdef PLATFORM_LINUX
 		struct tasklet_struct xmit_tasklet;
-#endif
-#ifdef PLATFORM_FREEBSD
+	#endif
+	#ifdef PLATFORM_FREEBSD
 		struct task xmit_tasklet;
-#endif
+	#endif
 		//per AC pending irp
 		int beq_cnt;
 		int bkq_cnt;
@@ -116,16 +116,42 @@ struct xmit_priv
 	_lock lock_sctx;
 
 };
+
 #define XMITBUF_ALIGN_SZ		4
 
+#if defined(CONFIG_SDIO_HCI)// || defined(CONFIG_GSPI_HCI)
 #ifdef CONFIG_TX_AGGREGATION
-#define MAX_XMITBUF_SZ	(20480)	// 20k
-#define NR_XMITBUFF	(16)
+	#define MAX_XMITBUF_SZ	(20480)	// 20k
 #else
-#define NR_XMITBUFF				8
-#define MAX_XMITBUF_SZ (1664)
-#define SDIO_TX_AGG_MAX	1
+	#define MAX_XMITBUF_SZ (1664)
+	#define SDIO_TX_AGG_MAX	1
 #endif
+
+#if defined CONFIG_SDIO_HCI
+	#define NR_XMITBUFF	(16)
+#endif
+#if defined(CONFIG_GSPI_HCI)
+	#define NR_XMITBUFF	(128)
+#endif
+
+#elif defined (CONFIG_USB_HCI)
+
+#ifdef CONFIG_USB_TX_AGGREGATION
+	#define MAX_XMITBUF_SZ	(20480)	// 20k
+#else
+	#define MAX_XMITBUF_SZ	(2048)
+#endif
+
+#ifdef CONFIG_SINGLE_XMIT_BUF
+	#define NR_XMITBUFF	(1)
+#else
+	#define NR_XMITBUFF	(4)
+#endif //CONFIG_SINGLE_XMIT_BUF
+#elif defined (CONFIG_PCI_HCI)
+	#define MAX_XMITBUF_SZ	(1664)
+	#define NR_XMITBUFF	(128)
+#endif
+
 
 s32 rtw_init_xmit_priv(PADAPTER padapter);
 void rtw_free_xmit_priv(PADAPTER padapter);

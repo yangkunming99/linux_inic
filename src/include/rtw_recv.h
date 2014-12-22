@@ -2,8 +2,26 @@
 #define __RTW_RECV_H__
 
 #include "drv_types.h"
+//#include "sdio_ops.h"
 
-#define NR_RECVBUFF (128)
+#ifdef PLATFORM_LINUX//PLATFORM_LINUX /PLATFORM_BSD
+
+	#ifdef CONFIG_SINGLE_RECV_BUF
+		#define NR_RECVBUFF (1)
+	#else
+		#if defined(CONFIG_GSPI_HCI)
+			#define NR_RECVBUFF (32)
+		#elif defined(CONFIG_SDIO_HCI)
+			#define NR_RECVBUFF (8)	
+		#else
+			#define NR_RECVBUFF (8)
+		#endif	
+	#endif //CONFIG_SINGLE_RECV_BUF
+
+	#define NR_PREALLOC_RECV_SKB (8)	
+#endif
+
+
 struct recv_priv
 {
 	_lock lock;
@@ -14,7 +32,7 @@ struct recv_priv
 #ifdef CONFIG_USB_HCI
 		//u8 *pallocated_urb_buf;
 		_sema allrxreturnevt;
-		uint	ff_hwaddr;
+//		uint	ff_hwaddr;
 		u8	rx_pending_cnt;
 	
 #ifdef CONFIG_USB_INTERRUPT_IN_PIPE

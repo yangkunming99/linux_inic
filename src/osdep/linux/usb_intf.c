@@ -46,11 +46,6 @@
 #include "osdep_intf.h"
 #include "usb_hal.h"
 
-
-MODULE_AUTHOR("Realtek");
-MODULE_DESCRIPTION("RealTek RTL-8195a iNIC");
-MODULE_LICENSE("GPL");
-MODULE_VERSION(RTL8195_VERSION);
 #define FUC_IN DBG_871X("%s()====>\n", __FUNCTION__)
 #define FUC_OUT DBG_871X("%s()<====\n", __FUNCTION__)
 #define FUC_TRACE DBG_871X("%s()[line:%d]\n", __FUNCTION__,__LINE__)
@@ -284,7 +279,7 @@ free_dvobj:
 exit:
 	return pdvobjpriv;
 }
-static void *usb_dvobj_deinit(struct usb_interface *intf ){
+static void usb_dvobj_deinit(struct usb_interface *intf ){
 	struct dvobj_priv *dvobj = usb_get_intfdata(intf);
 
 	usb_set_intfdata(intf, NULL);
@@ -310,13 +305,15 @@ static void *usb_dvobj_deinit(struct usb_interface *intf ){
 	usb_put_dev(interface_to_usbdev(intf));
 }
 
-static const struct usb_device_id rtl8195a_usb_ids[] =
-{
-	{ USB_DEVICE(USB_VENDER_ID_REALTEK, 0x8195)},
+static struct usb_device_id rtl8195a_usb_ids[] = {
+	{USB_DEVICE(USB_VENDER_ID_REALTEK, 0x8195)},
+	{}
 };
+
 /* the number of entries in array above */
 int const rtl8195a_usb_id_len =
 	sizeof(rtl8195a_usb_ids) / sizeof(struct usb_device_id);
+
 
 int rtw_ndev_init(struct net_device *dev){
 
@@ -422,7 +419,7 @@ _adapter *rtw_usb_if1_init(struct dvobj_priv *dvobj,
 		goto free_adapter;
 	}
 
-	//5 5. get MAC address
+	// get MAC address
 	mac_addr[0] = 0x00;
 	mac_addr[1] = 0xe0;
 	mac_addr[2] = 0x4c;
@@ -489,28 +486,7 @@ static int rtl8195a_usb_probe( struct usb_interface *intf,
 	}
 
 	status = _SUCCESS;
-#if 0
 
-	if (rtl81951_usb_reset(pusb))
-		DBG_871X("rtl81951_usb_reset done\n");
-	else 
-		DBG_871X("rtl81951_usb_reset fail\n");
-	
-	pnetdev = rtw_alloc_etherdev(sizeof(ADAPTER));
-	if(!pnetdev)
-	{
-		usb_deinit(intf);
-		return -ENODEV;
-	}
-#endif
-#if 0
-	if (!usb_send_data(pusb))
-		printk("send data done=>\n");
-	else 
-		printk("send data fail=>\n");
-#endif 
-
-//usb_read_data(pusb);
 
 free_all:
 	if (status != _SUCCESS && padapter)
@@ -541,21 +517,26 @@ static int rtl8195a_usb_suspend(struct usb_interface *intf, pm_message_t message
 	DBG_871X("%s\n",__FUNCTION__);
 	return 0;
 }
-static void rtl8195a_usb_resume(struct usb_interface *intf){
+static int rtl8195a_usb_resume(struct usb_interface *intf){
 	DBG_871X("%s\n",__FUNCTION__);
+	return 0;
 }
 
 static struct usb_driver rtl8195a_usb_driver = {
 	.name =		MODULENAME,
 	.probe = 	rtl8195a_usb_probe,
 	.disconnect=rtl8195a_usb_disconnect,
+	.id_table=	rtl8195a_usb_ids,
 	.suspend =	rtl8195a_usb_suspend,
 	.resume =	rtl8195a_usb_resume,
-	.id_table=	rtl8195a_usb_ids,
 };
 
 
 module_usb_driver(rtl8195a_usb_driver);
 
+MODULE_VERSION(RTL8195_VERSION);
+MODULE_AUTHOR("Realtek");
+MODULE_DESCRIPTION("RealTek RTL-8195a iNIC");
 MODULE_LICENSE("GPL");
+
 
