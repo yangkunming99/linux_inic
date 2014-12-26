@@ -1,8 +1,181 @@
+/******************************************************************************
+ *
+ * Copyright(c) 2007 - 2012 Realtek Corporation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of version 2 of the GNU General Public License as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
+ *
+ *******************************************************************************/
+#define _USB_OPS_LINUX_C_
+
 #include "basic_types.h"
 #include "rtw_debug.h"
 #include "osdep_service_linux.h"
 #include "drv_types.h"
+#include "usb_ops.h"
 
+int usbctrl_vendorreq(PADAPTER padapter, u8 request, u16 value, u16 index, void *pdata, u16 len, u8 requesttype)
+{
+	struct dvobj_priv  *pdvobjpriv = adapter_to_dvobj(padapter);
+//	struct pwrctrl_priv *pwrctl = dvobj_to_pwrctl(pdvobjpriv);
+	struct usb_device *udev = pdvobjpriv->pusbdev;
+	int status = 0;
+
+	unsigned int pipe;
+	
+	u32 tmp_buflen=0;
+	u8 reqtype;
+	u8 *pIo_buf;
+	int vendorreq_times = 0;
+
+	#ifdef CONFIG_USB_VENDOR_REQ_BUFFER_DYNAMIC_ALLOCATE
+	u8 *tmp_buf;
+	#else // use stack memory
+	u8 tmp_buf[MAX_USB_IO_CTL_SIZE];
+	#endif
+
+#ifdef CONFIG_CONCURRENT_MODE
+	if(padapter->adapter_type > PRIMARY_ADAPTER)
+	{
+		padapter = padapter->pbuddy_adapter;
+		pdvobjpriv = adapter_to_dvobj(padapter);
+		udev = pdvobjpriv->pusbdev;
+	}
+#endif
+
+
+	//DBG_871X("%s %s:%d\n",__FUNCTION__, current->comm, current->pid);
+
+	if (RTW_CANNOT_IO(padapter)){
+		RT_TRACE(_module_hci_ops_os_c_,_drv_err_,("usbctrl_vendorreq:(RTW_CANNOT_IO)!!!\n"));
+		status = -EPERM; 
+		goto exit;
+	}	
+
+
+	if(len>MAX_VENDOR_REQ_CMD_SIZE){
+		DBG_8192C( "[%s] Buffer len error ,vendor request failed\n", __FUNCTION__ );
+		status = -EINVAL;
+		goto exit;
+	}	
+
+	#ifdef CONFIG_USB_VENDOR_REQ_MUTEX
+	_enter_critical_mutex(&pdvobjpriv->usb_vendor_req_mutex, NULL);
+	#endif	
+
+	
+	// Acquire IO memory for vendorreq
+#ifdef CONFIG_USB_VENDOR_REQ_BUFFER_PREALLOC
+	pIo_buf = pdvobjpriv->usb_vendor_req_buf;
+#else
+	#ifdef CONFIG_USB_VENDOR_REQ_BUFFER_DYNAMIC_ALLOCATE
+	tmp_buf = rtw_malloc( (u32) len + ALIGNMENT_UNIT);
+	tmp_buflen =  (u32)len + ALIGNMENT_UNIT;
+	#else // use stack memory
+	tmp_buflen = MAX_USB_IO_CTL_SIZE;
+	#endif
+
+	// Added by Albert 2010/02/09
+	// For mstar platform, mstar suggests the address for USB IO should be 16 bytes alignment.
+	// Trying to fix it here.
+	pIo_buf = (tmp_buf==NULL)?NULL:tmp_buf + ALIGNMENT_UNIT -((SIZE_PTR)(tmp_buf) & 0x0f );	
+#endif
+
+	if ( pIo_buf== NULL) {
+		DBG_8192C( "[%s] pIo_buf == NULL \n", __FUNCTION__ );
+		status = -ENOMEM;
+		goto release_mutex;
+	}
+	
+	while(++vendorreq_times<= MAX_USBCTRL_VENDORREQ_TIMES)
+	{
+		_rtw_memset(pIo_buf, 0, len);
+		
+		if (requesttype == 0x01)
+		{
+			pipe = usb_rcvctrlpipe(udev, 0);//read_in
+			reqtype =  REALTEK_USB_VENQT_READ;		
+		} 
+		else 
+		{
+			pipe = usb_sndctrlpipe(udev, 0);//write_out
+			reqtype =  REALTEK_USB_VENQT_WRITE;		
+			_rtw_memcpy( pIo_buf, pdata, len);
+		}		
+	
+		status = rtw_usb_control_msg(udev, pipe, request, reqtype, value, index, pIo_buf, len, RTW_USB_CONTROL_MSG_TIMEOUT);
+		
+		if ( status == len)   // Success this control transfer.
+		{
+			rtw_reset_continual_io_error(pdvobjpriv);
+			if ( requesttype == 0x01 )
+			{   // For Control read transfer, we have to copy the read data from pIo_buf to pdata.
+				_rtw_memcpy( pdata, pIo_buf,  len );
+			}
+		}
+		else { // error cases
+			DBG_8192C("reg 0x%x, usb %s %u fail, status:%d value=0x%x, vendorreq_times:%d\n"
+				, value,(requesttype == 0x01)?"read":"write" , len, status, *(u32*)pdata, vendorreq_times);
+			
+			if (status < 0) {
+				if(status == (-ESHUTDOWN)	|| status == -ENODEV	)
+				{			
+					padapter->bSurpriseRemoved = _TRUE;
+				} else {
+					#ifdef DBG_CONFIG_ERROR_DETECT
+					{
+						HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(padapter);
+						pHalData->srestpriv.Wifi_Error_Status = USB_VEN_REQ_CMD_FAIL;
+					}
+					#endif
+				}
+			}
+			else // status != len && status >= 0
+			{
+				if(status > 0) {
+					if ( requesttype == 0x01 )
+					{   // For Control read transfer, we have to copy the read data from pIo_buf to pdata.
+						_rtw_memcpy( pdata, pIo_buf,  len );
+					}
+				}
+			}
+
+			if(rtw_inc_and_chk_continual_io_error(pdvobjpriv) == _TRUE ){
+				padapter->bSurpriseRemoved = _TRUE;
+				break;
+			}
+	
+		}
+	
+		// firmware download is checksumed, don't retry
+		if( (value >= FW_START_ADDRESS ) || status == len )
+			break;
+	
+	}
+
+	// release IO memory used by vendorreq
+	#ifdef CONFIG_USB_VENDOR_REQ_BUFFER_DYNAMIC_ALLOCATE
+	rtw_mfree(tmp_buf, tmp_buflen);
+	#endif
+
+release_mutex:
+	#ifdef CONFIG_USB_VENDOR_REQ_MUTEX
+	_exit_critical_mutex(&pdvobjpriv->usb_vendor_req_mutex, NULL);
+	#endif
+exit:
+	return status;
+
+}
 
 static void usb_write_port_complete(PURB purb)
 {

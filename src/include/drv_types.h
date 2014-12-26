@@ -181,6 +181,7 @@ unsigned int datatype: 1; // only one bit used, 0: data frame 1: management fram
 			((padapter)->bDriverStopped || \
 			 (padapter)->bSurpriseRemoved)
 
+#define adapter_to_dvobj(adapter) (adapter->dvobj)
 
 /*********AT command set***********/
 #define SIZE_AT_CMD_TYPE		2

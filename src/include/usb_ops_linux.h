@@ -29,6 +29,12 @@
 #define RECV_BULK_IN_ADDR		0x80//assign by drv,not real address 
 #define RECV_INT_IN_ADDR		0x81//assign by drv,not real address 
 
+#if defined(CONFIG_VENDOR_REQ_RETRY) && defined(CONFIG_USB_VENDOR_REQ_MUTEX)
+/* vendor req retry should be in the situation when each vendor req is atomically submitted from others */
+#define MAX_USBCTRL_VENDORREQ_TIMES	10
+#else
+#define MAX_USBCTRL_VENDORREQ_TIMES	1
+#endif
 
 #define RTW_USB_BULKOUT_TIMEOUT	5000//ms
 

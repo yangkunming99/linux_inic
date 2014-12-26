@@ -6,8 +6,8 @@ EXTRA_CFLAGS += -I$(src)/include
 CONFIG_RTL8195A = y
 
 ######################### Interface ###########################
-CONFIG_USB_HCI = n
-CONFIG_SDIO_HCI = y
+CONFIG_USB_HCI = y
+CONFIG_SDIO_HCI = u
 
 ###############################################################
 export TopDIR ?= $(shell pwd)
@@ -54,6 +54,12 @@ endif
 
 #######################################################
 
+
+########### AUTO_CFG  #################################	
+
+ifeq ($(CONFIG_RTL8195A),y) 
+$(shell cp $(TopDIR)/autoconf_rtl8195a_$(HCI_NAME)_linux.h $(TopDIR)/include/autoconf.h)
+endif
 
 ifneq ($(KERNELRELEASE),)
 

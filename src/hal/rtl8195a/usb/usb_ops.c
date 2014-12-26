@@ -4,6 +4,173 @@
 #include "usb_ops.h"
 #include "rtl8195a_recv.h"
 
+
+static u8 usb_read8(PADAPTER padapter, u32 addr)
+{
+	u8 request;
+	u8 requesttype;
+	u16 wvalue;
+	u16 index;
+	u16 len;
+	u8 data=0;
+	
+	_func_enter_;
+
+	request = 0x05;
+	requesttype = 0x01;//read_in
+	index = 0;//n/a
+
+	wvalue = (u16)(addr&0x0000ffff);
+	len = 1;	
+	
+	usbctrl_vendorreq(padapter, request, wvalue, index, &data, len, requesttype);
+
+	_func_exit_;
+
+	return data;
+		
+}
+
+static u16 usb_read16(PADAPTER padapter, u32 addr)
+{       
+	u8 request;
+	u8 requesttype;
+	u16 wvalue;
+	u16 index;
+	u16 len;
+	u16 data=0;
+	
+	_func_enter_;
+
+	request = 0x05;
+	requesttype = 0x01;//read_in
+	index = 0;//n/a
+
+	wvalue = (u16)(addr&0x0000ffff);
+	len = 2;	
+	
+	usbctrl_vendorreq(padapter, request, wvalue, index, &data, len, requesttype);
+
+	_func_exit_;
+
+	return data;
+	
+}
+
+static u32 usb_read32(PADAPTER padapter, u32 addr)
+{
+	u8 request;
+	u8 requesttype;
+	u16 wvalue;
+	u16 index;
+	u16 len;
+	u32 data=0;
+	
+	_func_enter_;
+
+	request = 0x05;
+	requesttype = 0x01;//read_in
+	index = 0;//n/a
+
+	wvalue = (u16)(addr&0x0000ffff);
+	len = 4;	
+	
+	usbctrl_vendorreq(padapter, request, wvalue, index, &data, len, requesttype);
+
+	_func_exit_;
+
+	return data;
+	
+}
+
+
+static int usb_write8(PADAPTER padapter, u32 addr, u8 val)
+{
+	u8 request;
+	u8 requesttype;
+	u16 wvalue;
+	u16 index;
+	u16 len;
+	u8 data;
+	int ret;
+	
+	_func_enter_;
+
+	request = 0x05;
+	requesttype = 0x00;//write_out
+	index = 0;//n/a
+
+	wvalue = (u16)(addr&0x0000ffff);
+	len = 1;
+	
+	data = val;	
+	
+	 ret = usbctrl_vendorreq(padapter, request, wvalue, index, &data, len, requesttype);
+	
+	_func_exit_;
+	
+	return ret;
+	
+}
+
+
+static int usb_write16(PADAPTER padapter, u32 addr, u16 val)
+{	
+	u8 request;
+	u8 requesttype;
+	u16 wvalue;
+	u16 index;
+	u16 len;
+	u16 data;
+	int ret;
+	
+	_func_enter_;
+
+	request = 0x05;
+	requesttype = 0x00;//write_out
+	index = 0;//n/a
+
+	wvalue = (u16)(addr&0x0000ffff);
+	len = 2;
+	
+	data = val;
+		
+	ret = usbctrl_vendorreq(padapter, request, wvalue, index, &data, len, requesttype);
+	
+	_func_exit_;
+	
+	return ret;
+	
+}
+
+static int usb_write32(PADAPTER padapter, u32 addr, u32 val)
+{
+	u8 request;
+	u8 requesttype;
+	u16 wvalue;
+	u16 index;
+	u16 len;
+	u32 data;
+	int ret;
+	
+	_func_enter_;
+
+	request = 0x05;
+	requesttype = 0x00;//write_out
+	index = 0;//n/a
+
+	wvalue = (u16)(addr&0x0000ffff);
+	len = 4;
+	data =val;		
+
+	ret =usbctrl_vendorreq(padapter, request, wvalue, index, &data, len, requesttype);
+	
+	_func_exit_;
+	
+	return ret;
+	
+}
+
 extern int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf);
 
 #ifdef CONFIG_USE_USB_BUFFER_ALLOC_RX
@@ -442,15 +609,15 @@ void rtl8195au_set_intf_ops(struct _io_ops	 *pops)
 {				
 	_rtw_memset((u8 *)pops, 0, sizeof(struct _io_ops));	
 
-//	pops->_read8 = &usb_read8;
-//	pops->_read16 = &usb_read16;
-//	pops->_read32 = &usb_read32;
+	pops->_read8 = &usb_read8;
+	pops->_read16 = &usb_read16;
+	pops->_read32 = &usb_read32;
 //	pops->_read_mem = &usb_read_mem;
 	pops->_read_port = &usb_read_port;	
 	
-//	pops->_write8 = &usb_write8;
-//	pops->_write16 = &usb_write16;
-//	pops->_write32 = &usb_write32;
+	pops->_write8 = &usb_write8;
+	pops->_write16 = &usb_write16;
+	pops->_write32 = &usb_write32;
 //	pops->_writeN = &usb_writeN;
 	
 #ifdef CONFIG_USB_SUPPORT_ASYNC_VDN_REQ	
