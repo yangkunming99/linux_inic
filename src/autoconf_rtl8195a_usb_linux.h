@@ -56,7 +56,13 @@
  //#define CONFIG_USB_SUPPORT_ASYNC_VDN_REQ 
 
  /*******debug relative config*********/
-//#define DBG 1
-//#define CONFIG_DEBUG
+#define DBG 1
+#define CONFIG_DEBUG
 //#define CONFIG_DEBUG_RTL871X
+
+//#define CONFIG_FWDL
+#define CONFIG_EMBEDDED_FWIMG	
+#define CONFIG_FILE_FWIMG
+
+
 

@@ -95,19 +95,38 @@ static inline int RT_usb_endpoint_num(const struct usb_endpoint_descriptor *epd)
 
 
 static u8 rtw_init_intf_priv(struct dvobj_priv *dvobj){
-	if(dvobj == NULL)
-		return _FAIL;
-//	_rtw_spinlock_init(&(dvobj->devlock));
-	_rtw_init_sema(&(dvobj->usb_suspend_sema), 0);
-//	_rtw_mutex_init(&(dvobj->io_mutex));	
-//	_rtw_init_sema(&(dvobj->tx_urb_done),0);
-	return _SUCCESS;
+	u8 rst = _SUCCESS;
+
+#ifdef CONFIG_USB_VENDOR_REQ_MUTEX
+	_rtw_mutex_init(&dvobj->usb_vendor_req_mutex);
+#endif
+
+#ifdef CONFIG_USB_VENDOR_REQ_BUFFER_PREALLOC
+	dvobj->usb_alloc_vendor_req_buf = rtw_zmalloc(MAX_USB_IO_CTL_SIZE);
+	if (dvobj->usb_alloc_vendor_req_buf == NULL) {
+		DBG_871X("alloc usb_vendor_req_buf failed... /n");
+		rst = _FAIL;
+		goto exit;
+	}
+	dvobj->usb_vendor_req_buf  =
+		(u8 *)N_BYTE_ALIGMENT((SIZE_PTR)(dvobj->usb_alloc_vendor_req_buf ), ALIGNMENT_UNIT);
+exit:
+#endif
+	return rst;
 }
-static void rtw_deinit_intf_priv(struct dvobj_priv *dvobj){
-//	_rtw_spinlock_free(&(dvobj->devlock));
-	_rtw_free_sema(&(dvobj->usb_suspend_sema));
-//	_rtw_mutex_free(&(dvobj->io_mutex));
-//	_rtw_free_sema(&(dvobj->tx_urb_done));
+static u8 rtw_deinit_intf_priv(struct dvobj_priv *dvobj){
+	u8 rst = _SUCCESS;
+
+#ifdef CONFIG_USB_VENDOR_REQ_BUFFER_PREALLOC
+	if(dvobj->usb_vendor_req_buf)
+		rtw_mfree(dvobj->usb_alloc_vendor_req_buf, MAX_USB_IO_CTL_SIZE);
+#endif
+
+#ifdef CONFIG_USB_VENDOR_REQ_MUTEX
+	_rtw_mutex_free(&dvobj->usb_vendor_req_mutex);
+#endif
+
+	return rst;
 }
 
 static int rtl8195a_get_pipes(struct dvobj_priv *pdvobjpriv)

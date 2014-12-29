@@ -33,17 +33,17 @@ int usbctrl_vendorreq(PADAPTER padapter, u8 request, u16 value, u16 index, void 
 
 	unsigned int pipe;
 	
-	u32 tmp_buflen=0;
 	u8 reqtype;
 	u8 *pIo_buf;
 	int vendorreq_times = 0;
-
+#ifndef CONFIG_USB_VENDOR_REQ_BUFFER_PREALLOC
+	u32 tmp_buflen=0;
 	#ifdef CONFIG_USB_VENDOR_REQ_BUFFER_DYNAMIC_ALLOCATE
 	u8 *tmp_buf;
 	#else // use stack memory
 	u8 tmp_buf[MAX_USB_IO_CTL_SIZE];
 	#endif
-
+#endif
 #ifdef CONFIG_CONCURRENT_MODE
 	if(padapter->adapter_type > PRIMARY_ADAPTER)
 	{
@@ -268,12 +268,8 @@ u32 usb_write_port(_adapter *padapter, u32 addr, u32 cnt, u8 *wmem)
 	u32 ret = _FAIL;
 	PURB	purb = NULL;
 	struct dvobj_priv	*pdvobj = padapter->dvobj;
-//	struct pwrctrl_priv *pwrctl = dvobj_to_pwrctl(pdvobj);
-//	struct xmit_priv	*pxmitpriv = &padapter->xmitpriv;
 	struct xmit_buf *pxmitbuf = (struct xmit_buf *)wmem;
-//	struct xmit_frame *pxmitframe = (struct xmit_frame *)pxmitbuf->priv_data;
 	struct usb_device *pusbd = pdvobj->pusbdev;
-//	struct pkt_attrib *pattrib = &pxmitframe->attrib;
 
 	struct submit_ctx sctx;
 
@@ -282,17 +278,17 @@ u32 usb_write_port(_adapter *padapter, u32 addr, u32 cnt, u8 *wmem)
 	
 _func_enter_;	
 	RT_TRACE(_module_hci_ops_os_c_,_drv_err_,("+usb_write_port\n"));
-/*
+
 	if (RTW_CANNOT_TX(padapter)) {
 		#ifdef DBG_TX
 		DBG_871X(" DBG_TX %s:%d bDriverStopped%d, bSurpriseRemoved:%d\n",__FUNCTION__, __LINE__
 			,padapter->bDriverStopped, padapter->bSurpriseRemoved);
 		#endif
 		RT_TRACE(_module_hci_ops_os_c_,_drv_err_,("usb_write_port:( padapter->bDriverStopped ||padapter->bSurpriseRemoved )!!!\n"));
-//		rtw_sctx_done_err(&pxmitbuf->sctx, RTW_SCTX_DONE_TX_DENY);
+		rtw_sctx_done_err(&pxmitbuf->sctx, RTW_SCTX_DONE_TX_DENY);
 		goto exit;
 	}
-*/		
+		
 	purb = pxmitbuf->pxmit_urb[0];
 	pipe = pdvobj->send_bulk_Pipe;
 

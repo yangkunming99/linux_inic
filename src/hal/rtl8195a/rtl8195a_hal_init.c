@@ -24,17 +24,84 @@
 #include <rtl8195a_hal.h>
 #include <8195_com_reg.h>
 #include <rtw_io.h>
+#include <8195_desc.h>
 #define MAX_REG_BOLCK_SIZE	196 
+
+#ifdef CONFIG_SDIO_HCI 
+	#include "sdio_ops_linux.h"
+#elif defined(CONFIG_USB_HCI)
+	#include "usb_ops_linux.h"
+#endif
+
+static void _fill_tx_des(
+	IN	PVOID	tx_buff,
+	u8	agg_num,
+	u32 pktsize,
+	u32 code
+	){
+	/* fill tx descriptor here*/
+
+	PTXDESC_8195A	ptx_des;
+	
+	ptx_des = (PTXDESC_8195A)tx_buff;
+	ptx_des->bus_agg_num = agg_num;
+	ptx_des->offset = SIZE_TX_DESC_8195a;
+	ptx_des->txpktsize = pktsize;
+	ptx_des->type = 0x53;
+}
 
 static int
 _BlockWrite(
 	IN		PADAPTER		padapter,
-	IN		PVOID		buffer,
+	IN		PVOID		tx_buff,
+	IN		PVOID		pdata,
 	IN		u32			buffSize
 	)
 {
 	int ret = _SUCCESS;
+	u32		blockSize	= 128;
+	u32		remainSize	= 0;
+	u32		blockCount	= 0;
+	u8		*bufferPtr	= (u8*)pdata;
+	u32		i=0, offset=0;	
+#ifdef CONFIG_USB_HCI
+	blockSize = MAX_REG_BOLCK_SIZE;
+#endif
 
+	blockCount = buffSize / blockSize;
+	remainSize = buffSize % blockSize;
+
+	if (blockCount) {
+			RT_TRACE(_module_hal_init_c_, _drv_notice_,
+					("_BlockWrite: [P1] buffSize(%d) blockSize(%d) blockCount(%d) remainSize(%d)\n",
+					buffSize, blockSize, blockCount, remainSize));
+		}
+
+	for (i = 0; i < blockCount; i++)
+	{
+		_fill_tx_des(tx_buff, 1, blockSize, MEM_WRITE);
+		_rtw_memcpy(tx_buff + SIZE_TX_DESC_8195a, bufferPtr+i*blockSize, blockSize);
+		
+		ret = rtw_writeN(padapter, (FW_8195A_START_ADDRESS + i * blockSize), blockSize+SIZE_TX_DESC_8195a, tx_buff);
+
+		if(ret == _FAIL)
+			goto exit;
+	}
+	if (remainSize)
+	{
+		offset = blockCount * blockSize;
+
+		_fill_tx_des(tx_buff, 1, remainSize, MEM_WRITE);
+		_rtw_memcpy(tx_buff + SIZE_TX_DESC_8195a, bufferPtr+offset, remainSize);
+
+			
+		ret = rtw_writeN(padapter, (FW_8195A_START_ADDRESS + offset), remainSize, tx_buff);
+			
+		if(ret == _FAIL)
+			goto exit;
+	}
+
+#if 0
 	u32			blockSize_p1 = 4;	// (Default) Phase #1 : PCI muse use 4-byte write to download FW
 	u32			blockSize_p2 = 8;	// Phase #2 : Use 8-byte, if Phase#1 use big size to write FW.
 	u32			blockSize_p3 = 1;	// Phase #3 : Use 1-byte, the remnant of FW image.
@@ -125,13 +192,28 @@ _PageWrite(
 	IN		u32			size
 	)
 {
+	u8 ret = _SUCCESS;
+	u8 * tx_buff;
+		
+	tx_buff = rtw_zmalloc(MAX_REG_BOLCK_SIZE + SIZE_TX_DESC_8195a);
+	if(tx_buff == NULL)
+		goto exit;
+		
+#if 0
 	u8 value8;
 	u8 u8Page = (u8) (page & 0x07) ;
 
 	value8 = (rtw_read8(padapter, REG_MCUFWDL+2) & 0xF8) | u8Page ;
 	rtw_write8(padapter, REG_MCUFWDL+2,value8);
 
-	return _BlockWrite(padapter,buffer,size);
+#endif 
+
+	ret = _BlockWrite(padapter,tx_buff,pdata,size);
+
+exit:	
+	if(tx_buff)
+		rtw_mfree(tx_buff,MAX_REG_BOLCK_SIZE + SIZE_TX_DESC_8195a);
+	return ret;
 }
 
 
@@ -179,9 +261,10 @@ extern u8 g_fwdl_chksum_fail;
 static s32 polling_fwdl_chksum(_adapter *adapter, u32 min_cnt, u32 timeout_ms)
 {
 	s32 ret = _FAIL;
-	u32 value32;
+	u32 value32 = 0;
 	u32 start = rtw_get_current_time();
 	u32 cnt = 0;
+#if 0
 
 	/* polling CheckSum report */
 	do {
@@ -201,10 +284,10 @@ static s32 polling_fwdl_chksum(_adapter *adapter, u32 min_cnt, u32 timeout_ms)
 		g_fwdl_chksum_fail--;
 		goto exit;
 	}
-
+#endif
 	ret = _SUCCESS;
 
-exit:
+//exit:
 	DBG_871X("%s: Checksum report %s! (%u, %dms), REG_MCUFWDL:0x%08x\n", __FUNCTION__
 	, (ret==_SUCCESS)?"OK":"Fail", cnt, rtw_get_passing_time_ms(start), value32);
 
@@ -247,9 +330,12 @@ extern u8 g_fwdl_wintint_rdy_fail;
 static s32 _FWFreeToGo(_adapter *adapter, u32 min_cnt, u32 timeout_ms)
 {
 	s32 ret = _FAIL;
-	u32	value32;
 	u32 start = rtw_get_current_time();
+
+	u32	value32 = 0;
 	u32 cnt = 0;
+#if 0
+
 
 	value32 = rtw_read32(adapter, REG_MCUFWDL);
 	value32 |= MCUFWDL_RDY;
@@ -276,10 +362,10 @@ static s32 _FWFreeToGo(_adapter *adapter, u32 min_cnt, u32 timeout_ms)
 		g_fwdl_wintint_rdy_fail--;
 		goto exit;
 	}
-
+#endif
 	ret = _SUCCESS;
 
-exit:
+//exit:
 	DBG_871X("%s: Polling FW ready %s! (%u, %dms), REG_MCUFWDL:0x%08x\n", __FUNCTION__
 		, (ret==_SUCCESS)?"OK":"Fail", cnt, rtw_get_passing_time_ms(start), value32);
 	return ret;
@@ -292,8 +378,8 @@ _FWDownloadEnable_8195A(
 	IN	BOOLEAN			enable
 	)
 {
+#if 0
 	u8	tmp;
-
 	if(enable)
 	{
 
@@ -315,16 +401,23 @@ _FWDownloadEnable_8195A(
 
 		// Reserved for fw extension.
 		rtw_write8(padapter, REG_MCUFWDL+1, 0x00);
-
 	}
+#endif
 }
+
+#ifdef CONFIG_FILE_FWIMG
+extern char *rtw_fw_file_path;
+extern char *rtw_fw_wow_file_path;
+u8	FwBuffer8195a[FW_8195A_SIZE];
+#endif //CONFIG_FILE_FWIMG
+
 
 //
 //	Description:
 //		Download 8192C firmware code.
 //
 //
-s32 rtl8195A_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw)
+s32 rtl8195a_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw)
 {
 	s32	rtStatus = _SUCCESS;
 	u8 write_fw = 0;
@@ -353,6 +446,7 @@ s32 rtl8195A_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw)
 	}
 
 
+
 //	RT_TRACE(_module_hal_init_c_, _drv_err_, ("rtl8723a_FirmwareDownload: %s\n", pFwImageFileName));
 
 #ifdef CONFIG_FILE_FWIMG
@@ -368,6 +462,7 @@ s32 rtl8195A_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw)
 		}
 #endif // CONFIG_FILE_FWIMG
 
+
 #ifdef CONFIG_FILE_FWIMG
 	if(rtw_is_file_readable(fwfilepath) == _TRUE)
 	{
@@ -380,19 +475,21 @@ s32 rtl8195A_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw)
 		pFirmware->eFWSource = FW_SOURCE_HEADER_FILE;
 	}
 
+
 	switch(pFirmware->eFWSource)
 	{
 		case FW_SOURCE_IMG_FILE:
 			#ifdef CONFIG_FILE_FWIMG
-			rtStatus = rtw_retrive_from_file(fwfilepath, FwBuffer8195A, FW_8195A_SIZE);
+			rtStatus = rtw_retrive_from_file(fwfilepath, FwBuffer8195a, FW_8195A_SIZE);
 			pFirmware->ulFwLength = rtStatus>=0?rtStatus:0;
-			pFirmware->szFwBuffer = FwBuffer8195A;
+			pFirmware->szFwBuffer = FwBuffer8195a;
 			#endif //CONFIG_FILE_FWIMG
 			break;
 		case FW_SOURCE_HEADER_FILE:
 			
 			break;
 	}
+
 
 	if (pFirmware->ulFwLength > FW_8195A_SIZE) {
 		rtStatus = _FAIL;
@@ -463,7 +560,6 @@ fwdl_stat:
 exit:
 	if (pFirmware)
 		rtw_mfree((u8*)pFirmware, sizeof(RT_FIRMWARE_8195A));
-
 	return rtStatus;
 }
 

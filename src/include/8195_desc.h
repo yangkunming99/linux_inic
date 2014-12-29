@@ -1,6 +1,15 @@
 #ifndef __8195_DESC_H__
 #define __8195_DESC_H__
 
+// define transmit packat type
+#define PACKET_802_3	0X83
+#define PACKET_802_11	0X81
+#define H2C_CMD			0X11
+#define MEM_READ		0X51
+#define MEM_WRITE		0X53
+#define MEM_SET			0X55
+#define FM_FREETOGO		0X61
+
 typedef struct _TX_DESC{
 	// u4Byte 0
 	u32	txpktsize:16;

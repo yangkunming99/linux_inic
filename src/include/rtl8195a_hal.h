@@ -82,4 +82,6 @@ typedef struct _RT_8195A_FIRMWARE_HDR
 }RT_8195A_FIRMWARE_HDR, *PRT_8195A_FIRMWARE_HDR;
 #endif // download firmware related data structure
 
+s32 rtl8195a_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw);
+
 #endif

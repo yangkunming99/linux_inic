@@ -597,8 +597,14 @@ _func_exit_;
 }
 
 #endif
+
+
 u32 rtl8195au_hal_init(PADAPTER padapter){
-	return _SUCCESS;
+	u8 res = _SUCCESS;
+#ifdef CONFIG_FWDL
+	res = rtl8195A_FirmwareDownload(padapter,_FAIL);
+#endif
+	return res;
 }
 
 u32 rtl8195au_hal_deinit(PADAPTER padapter){
