@@ -179,7 +179,7 @@ _BlockWrite(
 				goto exit;
 		}
 	}
-
+#endif
 exit:
 	return ret;
 }
@@ -188,7 +188,7 @@ static int
 _PageWrite(
 	IN		PADAPTER	padapter,
 	IN		u32			page,
-	IN		PVOID		buffer,
+	IN		PVOID		pdata,
 	IN		u32			size
 	)
 {
