@@ -47,7 +47,7 @@ static void _fill_tx_des(
 	ptx_des->bus_agg_num = agg_num;
 	ptx_des->offset = SIZE_TX_DESC_8195a;
 	ptx_des->txpktsize = pktsize;
-	ptx_des->type = 0x53;
+	ptx_des->type = code;
 }
 
 static int

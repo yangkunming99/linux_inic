@@ -3,7 +3,7 @@
 #include "drv_types.h"
 #include "usb_ops.h"
 #include "rtl8195a_recv.h"
-
+#include "rtl8195a_hal.h"
 
 static u8 usb_read8(PADAPTER padapter, u32 addr)
 {
@@ -169,6 +169,130 @@ static int usb_write32(PADAPTER padapter, u32 addr, u32 val)
 	
 	return ret;
 	
+}
+
+static void usb_writeN_complete(struct urb *purb){
+	struct submit_ctx *sctx = (struct submit_ctx *)purb->context;
+	   
+	_func_enter_;
+	
+	if (purb->status==0) {
+		//
+	} else {
+		RT_TRACE(_module_hci_ops_os_c_,_drv_err_,("usb_writeN_complete : purb->status(%d) != 0 \n", purb->status));
+		DBG_871X("###=> usb_writeN_complete status(%d)\n",purb->status);
+		if((purb->status==-EPIPE)||(purb->status==-EPROTO))
+		{
+			//usb_clear_halt(pusbdev, purb->pipe);	
+			//msleep(10);
+			//sreset_set_wifi_error_status(padapter, USB_WRITE_PORT_FAIL);
+		} else if (purb->status == -EINPROGRESS) {
+			RT_TRACE(_module_hci_ops_os_c_,_drv_err_,("usb_writeN_complete: EINPROGESS\n"));
+			goto check_completion;
+
+		} else if (purb->status == -ENOENT) {
+			DBG_871X("%s: -ENOENT\n", __func__);
+			goto check_completion;
+			
+		} else if (purb->status == -ECONNRESET) {
+			DBG_871X("%s: -ECONNRESET\n", __func__);
+			goto check_completion;
+
+		} else if (purb->status == -ESHUTDOWN) {
+			RT_TRACE(_module_hci_ops_os_c_,_drv_err_,("usb_writeN_complete: ESHUTDOWN\n"));
+//			padapter->bDriverStopped=_TRUE;
+			RT_TRACE(_module_hci_ops_os_c_,_drv_err_,("usb_writeN_complete:bDriverStopped=TRUE\n"));
+
+			goto check_completion;
+		}
+		else
+		{					
+//			padapter->bSurpriseRemoved=_TRUE;
+			DBG_8192C("bSurpriseRemoved=TRUE\n");
+			//rtl8192cu_trigger_gpio_0(padapter);
+			RT_TRACE(_module_hci_ops_os_c_,_drv_err_,("usb_writeN_complete:bSurpriseRemoved=TRUE\n"));
+
+			goto check_completion;
+		}
+	}
+
+check_completion:
+
+	rtw_sctx_done_err(&sctx,
+	purb->status ? RTW_SCTX_DONE_WRITE_PORT_ERR : RTW_SCTX_DONE_SUCCESS);
+
+_func_exit_;	
+
+}
+
+static int usb_writeN(PADAPTER padapter, u32 addr, u32 length, u8 *pdata)
+{
+	u8 buf[VENDOR_CMD_MAX_DATA_LEN]={0};
+	unsigned int pipe;
+	int status;
+	u32 ret = _FAIL;
+	PURB	purb = NULL;
+	
+	struct submit_ctx *sctx;
+	struct dvobj_priv	*pdvobj = padapter->dvobj;
+	struct usb_device *pusbd = pdvobj->pusbdev;
+_func_enter_;
+	RT_TRACE(_module_hci_ops_os_c_,_drv_err_,("+usb_writeN\n"));
+	pipe = pdvobj->send_bulk_Pipe;
+	purb = usb_alloc_urb(0, GFP_KERNEL);
+ 	if(purb == NULL) 
+ 	{
+ 		DBG_871X("[%s] alloc urb failed.\n",__FUNCTION__);
+	return _FAIL;	 
+ 	}
+	
+	 _rtw_memcpy(buf, pdata, length );
+	
+	rtw_sctx_init(sctx, 1000);
+//	pxmitbuf->sctx = &sctx;
+	
+	if (RTW_CANNOT_TX(padapter)) {
+		#ifdef DBG_TX
+		DBG_871X(" DBG_TX %s:%d bDriverStopped%d, bSurpriseRemoved:%d\n",__FUNCTION__, __LINE__
+			,padapter->bDriverStopped, padapter->bSurpriseRemoved);
+		#endif
+		RT_TRACE(_module_hci_ops_os_c_,_drv_err_,("usb_write_port:( padapter->bDriverStopped ||padapter->bSurpriseRemoved )!!!\n"));
+		rtw_sctx_done_err(&sctx, RTW_SCTX_DONE_TX_DENY);
+		goto exit;
+	}
+	
+	usb_fill_bulk_urb(purb, pusbd, pipe, 
+       					buf,
+              			length,
+              			usb_writeN_complete,
+              			sctx);//context is pxmitbuf
+
+	status = usb_submit_urb(purb, GFP_ATOMIC);
+	if (!status) {
+		// submit successfully
+	} else {
+		rtw_sctx_done_err(&sctx, RTW_SCTX_DONE_WRITE_PORT_ERR);
+		DBG_871X("usb_writeN, status=%d\n", status);
+		RT_TRACE(_module_hci_ops_os_c_,_drv_err_,("usb_writeN(): usb_submit_urb, status=%x\n", status));
+		
+		switch (status) {
+		case -ENODEV:
+			padapter->bDriverStopped = _TRUE;
+			break;
+		default:
+			break;
+		}
+		goto exit;
+	}
+	ret= _SUCCESS;
+
+	/*submit urb done, wait here until timeout or response successfully*/
+	if (ret == _SUCCESS)
+		ret = rtw_sctx_wait(sctx, __func__);
+exit:	
+	_func_exit_;
+	
+	return ret;
 }
 
 extern int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf);
@@ -602,7 +726,7 @@ _func_exit_;
 u32 rtl8195au_hal_init(PADAPTER padapter){
 	u8 res = _SUCCESS;
 #ifdef CONFIG_FWDL
-	res = rtl8195A_FirmwareDownload(padapter,_FAIL);
+	res = rtl8195a_FirmwareDownload(padapter,_FAIL);
 #endif
 	return res;
 }
@@ -624,7 +748,7 @@ void rtl8195au_set_intf_ops(struct _io_ops	 *pops)
 	pops->_write8 = &usb_write8;
 	pops->_write16 = &usb_write16;
 	pops->_write32 = &usb_write32;
-//	pops->_writeN = &usb_writeN;
+	pops->_writeN = &usb_writeN;
 	
 #ifdef CONFIG_USB_SUPPORT_ASYNC_VDN_REQ	
 	pops->_write8_async= &usb_async_write8;
