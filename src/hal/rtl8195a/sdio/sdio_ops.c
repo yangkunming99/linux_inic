@@ -587,6 +587,98 @@ s32 sdio_local_write(
 	return err;
 }
 
+
+u8 SdioLocalCmd52Read1Byte(PADAPTER padapter, u32 addr)
+{
+
+	u8 val = 0;
+	
+	HalSdioGetCmdAddr8195ASdio(padapter, SDIO_LOCAL_DEVICE_ID, addr, &addr);
+	sd_cmd52_read(padapter, addr, 1, &val);
+
+	return val;
+}
+
+u16 SdioLocalCmd52Read2Byte(PADAPTER padapter, u32 addr)
+{
+
+	u16 val = 0;
+
+	HalSdioGetCmdAddr8195ASdio(padapter, SDIO_LOCAL_DEVICE_ID, addr, &addr);
+	sd_cmd52_read(padapter, addr, 2, (u8*)&val);
+
+	val = le16_to_cpu(val);
+
+	return val;
+}
+
+u32 SdioLocalCmd52Read4Byte(PADAPTER padapter, u32 addr)
+{
+	u32 val = 0;
+
+	HalSdioGetCmdAddr8195ASdio(padapter, SDIO_LOCAL_DEVICE_ID, addr, &addr);
+	sd_cmd52_read(padapter, addr, 4, (u8*)&val);
+
+	val = le32_to_cpu(val);
+
+	return val;
+}
+
+u32 SdioLocalCmd53Read4Byte(PADAPTER padapter, u32 addr)
+{
+//	struct intf_hdl * pintfhdl;
+//	u8 bMacPwrCtrlOn;
+	u32 val=0;
+
+//	pintfhdl=&padapter->iopriv.intf;
+	HalSdioGetCmdAddr8195ASdio(padapter, SDIO_LOCAL_DEVICE_ID, addr, &addr);
+#if 0
+	rtw_hal_get_hwreg(padapter, HW_VAR_APFM_ON_MAC, &bMacPwrCtrlOn);
+	if ((_FALSE == bMacPwrCtrlOn)
+#ifdef CONFIG_LPS_LCLK
+		|| (_TRUE == adapter_to_pwrctl(padapter)->bFwCurrentInPSMode)
+#endif
+		)
+	{
+		sd_cmd52_read(pintfhdl, addr, 4, (u8*)&val);
+		val = le32_to_cpu(val);
+	}
+	else
+#endif
+	val = sd_read32(padapter, addr, NULL);
+
+	return val;
+}
+
+void SdioLocalCmd52Write1Byte(PADAPTER padapter, u32 addr, u8 v)
+{
+//	struct intf_hdl * pintfhdl;
+	
+//	pintfhdl=&padapter->iopriv.intf;
+	HalSdioGetCmdAddr8195ASdio(padapter, SDIO_LOCAL_DEVICE_ID, addr, &addr);
+	sd_cmd52_write(padapter, addr, 1, &v);
+}
+
+void SdioLocalCmd52Write2Byte(PADAPTER padapter, u32 addr, u16 v)
+{
+//	struct intf_hdl * pintfhdl;
+
+//	pintfhdl=&padapter->iopriv.intf;
+	HalSdioGetCmdAddr8195ASdio(padapter, SDIO_LOCAL_DEVICE_ID, addr, &addr);
+	v = cpu_to_le16(v);
+	sd_cmd52_write(padapter, addr, 2, (u8*)&v);
+}
+
+void SdioLocalCmd52Write4Byte(PADAPTER padapter, u32 addr, u32 v)
+{
+//	struct intf_hdl * pintfhdl;
+
+//	pintfhdl=&padapter->iopriv.intf;
+	HalSdioGetCmdAddr8195ASdio(padapter, SDIO_LOCAL_DEVICE_ID, addr, &addr);
+	v = cpu_to_le32(v);
+	sd_cmd52_write(padapter, addr, 4, (u8*)&v);
+}
+
 static void sd_rxhandler(PADAPTER padapter, struct recv_buf *precvbuf)
 {
 	struct recv_priv *precvpriv = &padapter->recvpriv;
@@ -683,6 +775,10 @@ void sd_int_dpc(PADAPTER padapter)
 				break;
 
 		} while (1);
+
+	}
+	if (psdio->sdio_hisr & SDIO_HISR_C2H_MSG_INT)
+	{
 
 	}
 }

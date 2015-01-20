@@ -359,7 +359,13 @@ _func_enter_;
 				return ;
 			_rtw_memcpy(precvbuf->pskb->data,precvbuf->pbuf,precvbuf->transfer_len);
 			skb_put(precvbuf->pskb, precvbuf->transfer_len);
-
+			
+			precvbuf->len = precvbuf->pskb->len;
+			precvbuf->phead = precvbuf->pskb->head;
+			precvbuf->pdata = precvbuf->pskb->data;
+			precvbuf->ptail = skb_tail_pointer(precvbuf->pskb);
+			precvbuf->pend = skb_end_pointer(precvbuf->pskb);
+			
 			//rtw_enqueue_rx_transfer_buffer(precvpriv, rx_transfer_buf);			
 			rtw_enqueue_recvbuf(precvbuf, &precvpriv->recv_buf_pending_queue);
 

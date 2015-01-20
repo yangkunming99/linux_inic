@@ -103,8 +103,116 @@ struct recv_buf
 	_pkt *pskb;
 #endif
 };
-s32 rtw_init_recv_priv(PADAPTER padapter);
-void rtw_free_recv_priv(PADAPTER padapter);
+
+
+__inline static u8 *recvbuf_push(struct recv_buf *precvbuf, sint sz)
+{
+	// append data before rx_data
+
+	/* add data to the start of recv_frame
+ *
+ *      This function extends the used data area of the recv_frame at the buffer
+ *      start. rx_data must be still larger than rx_head, after pushing.
+ */
+
+	if(precvbuf==NULL)
+		return NULL;
+
+
+	precvbuf->pdata -= sz ;
+	if( precvbuf->pdata < precvbuf->phead)
+	{
+		precvbuf->pdata += sz ;
+		return NULL;
+	}
+
+	precvbuf->len +=sz;
+
+	return precvbuf->pdata;
+
+}
+
+
+__inline static u8 *recvbuf_pull(struct recv_buf *precvbuf, sint sz)
+{
+	// rx_data += sz; move rx_data sz bytes  hereafter
+
+	//used for extract sz bytes from rx_data, update rx_data and return the updated rx_data to the caller
+
+
+	if(precvbuf==NULL)
+		return NULL;
+
+
+	precvbuf->pdata += sz;
+
+	if(precvbuf->pdata > precvbuf->ptail)
+	{
+		precvbuf->pdata -= sz;
+		return NULL;
+	}
+
+	precvbuf->len -=sz;
+
+	return precvbuf->pdata;
+
+}
+
+__inline static u8 *recvbuf_put(struct recv_buf *precvbuf, sint sz)
+{
+	// rx_tai += sz; move rx_tail sz bytes  hereafter
+
+	//used for append sz bytes from ptr to rx_tail, update rx_tail and return the updated rx_tail to the caller
+	//after putting, rx_tail must be still larger than rx_end.
+ 	unsigned char * prev_rx_tail;
+
+	if(precvbuf==NULL)
+		return NULL;
+
+	prev_rx_tail = precvbuf->ptail;
+
+	precvbuf->ptail += sz;
+
+	if(precvbuf->ptail > precvbuf->pend)
+	{
+		precvbuf->ptail -= sz;
+		return NULL;
+	}
+
+	precvbuf->len +=sz;
+
+	return precvbuf->ptail;
+
+}
+
+
+
+__inline static u8 *recvbuf_pull_tail(struct recv_buf *precvbuf, sint sz)
+{
+	// rmv data from rx_tail (by yitsen)
+
+	//used for extract sz bytes from rx_end, update rx_end and return the updated rx_end to the caller
+	//after pulling, rx_end must be still larger than rx_data.
+
+	if(precvbuf==NULL)
+		return NULL;
+
+	precvbuf->ptail -= sz;
+
+	if(precvbuf->ptail < precvbuf->pdata)
+	{
+		precvbuf->ptail += sz;
+		return NULL;
+	}
+
+	precvbuf->len -=sz;
+
+	return precvbuf->ptail;
+
+}
+
+s32 rtw_init_recv_priv(_adapter *padapter);
+void rtw_free_recv_priv(_adapter *padapter);
 s32 rtw_enqueue_recvbuf(struct recv_buf *precvbuf, _queue *queue);
 struct recv_buf *rtw_dequeue_recvbuf (_queue *queue);
 #endif

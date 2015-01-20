@@ -20,6 +20,7 @@
 #define _XMIT_OSDEP_C_
 #include "drv_types.h"
 #include "xmit_osdep.h"
+#include "8195_desc.h"
 
 void rtw_os_pkt_complete(_adapter *padapter, _pkt *pkt)
 {
@@ -123,12 +124,6 @@ void rtw_os_xmit_resource_free(_adapter *padapter, struct xmit_buf *pxmitbuf,u32
 	}
 }
 
-
-
-
-
-
-
 int _rtw_xmit_entry(_pkt *pkt, _nic_hdl pnetdev)
 {
 	//int ret = 0;
@@ -136,6 +131,9 @@ int _rtw_xmit_entry(_pkt *pkt, _nic_hdl pnetdev)
 	struct xmit_buf *pxmitbuf;
 	struct xmit_priv *pxmitpriv;
 	//_irqL irqL;
+	PTXDESC_8195A ptxdesc;
+//	PAT_CMD_DESC patcmd;
+//	_pkt *pkt = pxmitbuf->pkt;	
 _func_enter_;
 	padapter = (PADAPTER)rtw_netdev_priv(pnetdev);
 	pxmitpriv = &padapter->xmitpriv;
@@ -144,7 +142,8 @@ _func_enter_;
 extern struct timeval time_out;
 do_gettimeofday(&time_out);
 #endif
-	//enqueue pkt
+
+	//dequeue free xmitbuf
 	pxmitbuf = rtw_alloc_xmitbuf(padapter);
 	if(!pxmitbuf)
 	{
@@ -152,10 +151,18 @@ do_gettimeofday(&time_out);
 		goto drop_packet;
 	}
 	
-	pxmitbuf->pkt = pkt;
+	pxmitbuf->pkt_len = pkt->len + SIZE_TX_DESC_8195a;
+	ptxdesc = (PTXDESC_8195A)pxmitbuf->pbuf;
+	ptxdesc->txpktsize = pkt->len;
+	ptxdesc->offset = SIZE_TX_DESC_8195a;
+	ptxdesc->type = TX_PACKET_802_3;//indicate transmittion of 802.3 packet
+	ptxdesc->bus_agg_num = 0;//to do
+	_rtw_memcpy(pxmitbuf->pbuf+sizeof(TX_DESC), pkt->data, pkt->len);	
+	pxmitpriv->tx_pkts++;
+	pxmitpriv->tx_bytes+=pkt->len;
+	rtw_skb_free(pkt);
 	if (rtw_hal_xmit(padapter, pxmitbuf) == _FALSE)
 		goto drop_packet;
-
 	goto exit;
 
 drop_packet:

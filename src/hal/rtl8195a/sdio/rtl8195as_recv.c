@@ -7,7 +7,6 @@ extern int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf);
 static void rtl8195as_recv_tasklet(void *priv)
 {
 	PADAPTER padapter;
-	RXDESC_8195A rxdesc;
 	struct recv_buf *precvbuf;
 	struct recv_priv *precvpriv;
 	padapter = (PADAPTER)priv;
@@ -15,10 +14,7 @@ static void rtl8195as_recv_tasklet(void *priv)
 	do {
 		precvbuf = rtw_dequeue_recvbuf(&precvpriv->recv_buf_pending_queue);
 		if (NULL == precvbuf) break;
-		_rtw_memcpy(&rxdesc, precvbuf->pdata, SIZE_RX_DESC_8195a);
-		//remove the sdio header
-		skb_pull(precvbuf->pskb, rxdesc.offset);
-		precvbuf->pdata = precvbuf->pskb->data;
+
 		if (rtw_recv_entry(padapter, precvbuf) != _SUCCESS)
 		{
 			RT_TRACE(_module_rtl871x_recv_c_, _drv_err_, ("%s: rtw_recv_entry(padapter, precvbuf) != _SUCCESS\n",__FUNCTION__));

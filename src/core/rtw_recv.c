@@ -5,6 +5,7 @@
 #include "rtw_recv.h"
 #include "recv_osdep.h"
 #include "hal_intf.h"
+#include "8195_desc.h"
 #define _RTW_RECV_C_
 struct recv_buf *rtw_dequeue_recvbuf (_queue *queue)
 {
@@ -85,17 +86,21 @@ int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf)
 {
 	int ret = _SUCCESS;
 	struct recv_priv *precvpriv = &padapter->recvpriv;
-	AT_CMD_DESC atcmddesc;
+	RXDESC_8195A rxdesc;
+//	AT_CMD_DESC atcmddesc;
 	//_irqL irqL;
-	unsigned char attype[2];
-	struct cmd_priv *pcmdpriv;
+//	unsigned char attype[2];
+//	struct cmd_priv *pcmdpriv;
 	
+	_rtw_memcpy(&rxdesc, precvbuf->pdata, SIZE_RX_DESC_8195a);
+	//remove the rx header
+	recvbuf_pull(precvbuf, rxdesc.offset);
 
-	_rtw_memcpy(&atcmddesc, precvbuf->pskb->data, SIZE_AT_CMD_DESC);
+//	_rtw_memcpy(&atcmddesc, precvbuf->pskb->data, SIZE_AT_CMD_DESC);
 	//remove the at cmd header
-	skb_pull(precvbuf->pskb, atcmddesc.offset);
-
-	if(atcmddesc.datatype == DATA_FRAME)//data pkt 
+//	skb_pull(precvbuf->pskb, atcmddesc.offset);
+	DBG_871X("packet type is : 0x%02x\n", rxdesc.type);
+	if(rxdesc.type == RX_PACKET_802_3)//data pkt 
 	{	
 		if ((padapter->bDriverStopped == _FALSE) && (padapter->bSurpriseRemoved == _FALSE))
 		{
@@ -122,17 +127,18 @@ int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf)
 			goto _recv_data_drop;
 		}
 	}
-	else if(atcmddesc.datatype == MNGMT_FRAME)//cmd pkt
+	else if(rxdesc.type == RX_C2H_CMD)//cmd pkt
 	{
-		pcmdpriv = &padapter->cmdpriv;
-		//check the at cmd type
-		_rtw_memcpy(&attype, precvbuf->pskb->data, 2);
-		if(_rtw_memcmp(attype, AT_CMD_wifi_linked, SIZE_AT_CMD_TYPE))
+		//_rtw_memcpy(&attype, precvbuf->pskb->data, 2);
+extern void DumpForOneBytes(IN u8 * pData, IN u8 Len);
+		DumpForOneBytes(precvbuf->pdata, precvbuf->len);
+		DBG_871X("packet size is : %d && %d\n", precvbuf->len, rxdesc.pkt_len);
+		if(_rtw_memcmp(precvbuf->pdata, AT_CMD_wifi_linked, SIZE_AT_CMD_TYPE))
 		{
 			DBG_871X("%s: Ameba connected!\n", __FUNCTION__);
 			rtw_os_indicate_connect(padapter->pnetdev);
 		}
-		if(_rtw_memcmp(attype, AT_CMD_wifi_unlinked, SIZE_AT_CMD_TYPE))
+		if(_rtw_memcmp(precvbuf->pdata, AT_CMD_wifi_unlinked, SIZE_AT_CMD_TYPE))
 		{
 			DBG_871X("%s: Ameba disconnected!\n", __FUNCTION__);
 			rtw_os_indicate_disconnect(padapter->pnetdev);
@@ -140,6 +146,7 @@ int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf)
 		_rtw_skb_free(precvbuf->pskb);
 		goto _free_recv_buf;
 	}
+
 _recv_data_drop:
 	if(ret == _FAIL){
 		precvpriv->rx_drop++;

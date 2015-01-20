@@ -35,13 +35,13 @@ _func_enter_;
 	}
 
 	RT_TRACE(_module_recv_osdep_c_,_drv_info_,("rtw_recv_indicatepkt():skb != NULL !!!\n"));		
-/*
-	skb->data = precv_frame->u.hdr.rx_data;
 
-	skb_set_tail_pointer(skb, precv_frame->u.hdr.len);
+	skb->data = precvbuf->pdata;
 
-	skb->len = precv_frame->u.hdr.len;
-*/
+	skb_set_tail_pointer(skb, precvbuf->len);
+
+	skb->len = precvbuf->len;
+
 	RT_TRACE(_module_recv_osdep_c_,_drv_info_,("\n skb->head=%p skb->data=%p skb->tail=%p skb->end=%p skb->len=%d\n", skb->head, skb->data, skb_tail_pointer(skb), skb_end_pointer(skb), skb->len));
 
 	rtw_os_recv_indicate_pkt(padapter, skb);

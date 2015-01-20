@@ -4,7 +4,7 @@
 
 
 typedef struct _ADAPTER _adapter,ADAPTER,*PADAPTER;
-typedef struct _AT_CMD_DESC AT_CMD_DESC, *PAT_CMD_DESC;
+//typedef struct _AT_CMD_DESC AT_CMD_DESC, *PAT_CMD_DESC;
 #include "rtw_debug.h"
 #include "osdep_service.h"
 
@@ -161,6 +161,7 @@ struct _ADAPTER
 	void (*intf_start)(_adapter * adapter);
 	void (*intf_stop)(_adapter * adapter);
 };
+/*
 struct _AT_CMD_DESC{
 //DWORD 0
 unsigned int pktsize: 16; //=tx_desc.pktsize - cmd_desc.offset
@@ -169,7 +170,7 @@ unsigned int resv: 7;
 unsigned int datatype: 1; // only one bit used, 0: data frame 1: management frame
 };
 #define SIZE_AT_CMD_DESC (sizeof(AT_CMD_DESC))
-
+*/
 #define RTW_CANNOT_IO(padapter) \
 			((padapter)->bSurpriseRemoved)
 

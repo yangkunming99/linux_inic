@@ -2,13 +2,24 @@
 #define __8195_DESC_H__
 
 // define transmit packat type
-#define PACKET_802_3	0X83
-#define PACKET_802_11	0X81
-#define H2C_CMD			0X11
-#define MEM_READ		0X51
-#define MEM_WRITE		0X53
-#define MEM_SET			0X55
-#define FM_FREETOGO		0X61
+#define TX_PACKET_802_3	(0x83)
+#define TX_PACKET_802_11	(0x81)
+#define TX_H2C_CMD			(0x11)
+#define TX_MEM_READ		(0x51)
+#define TX_MEM_WRITE		(0x53)
+#define TX_MEM_SET			(0x55)
+#define TX_FM_FREETOGO	(0x61)
+
+//define receive packet type
+#define RX_PACKET_802_3	(0x82)
+#define RX_PACKET_802_11	(0x80)
+#define RX_C2H_CMD			(0x10)
+#define RX_MEM_READ		(0x50)
+#define RX_MEM_WRITE		(0x52)
+#define RX_MEM_SET			(0x54)
+#define RX_FM_FREETOGO	(0x60)
+
+
 
 typedef struct _TX_DESC{
 	// u4Byte 0

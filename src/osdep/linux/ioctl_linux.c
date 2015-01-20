@@ -4,45 +4,52 @@
 #include "rtw_xmit.h"
 #include "rtw_cmd.h"
 #include "hal_intf.h"
+#include "8195_desc.h"
 //define some private IOCTL options which are not in wireless.h
 #define RTL_IOCTL_ATCMD				(SIOCDEVPRIVATE+1)
 static int rtw_wx_atcmd(PADAPTER padapter, struct net_device *dev, struct iw_point *p)
 {
 	int ret = 0;
-	u32 totlen;
-	struct cmd_obj *pcmd;
 
+	struct xmit_buf *pxmitbuf;
+	struct xmit_priv *pxmitpriv;
+	PTXDESC_8195A ptxdesc;
+
+_func_enter_;
+	pxmitpriv = &padapter->xmitpriv;
 	if (p->length <= 0 || !p->pointer){
 		ret = -EINVAL;
 		return ret;
 	}
-	pcmd = (struct cmd_obj*)rtw_zmalloc(sizeof(struct cmd_obj));
-	if(pcmd == NULL)
+
+	pxmitbuf = rtw_alloc_xmitbuf(padapter);
+	if(!pxmitbuf)
 	{
+		DBG_871X("%s(): pxmitbuf allocated failed!\n", __FUNCTION__);
 		ret = -ENOMEM;
 		goto exit;
 	}
-	totlen = p->length;
-	pcmd->parmbuf= rtw_zmalloc(totlen);
-	pcmd->cmdsz = totlen;
-	if (pcmd->parmbuf == NULL)
+	
+	pxmitbuf->pkt_len = p->length + SIZE_TX_DESC_8195a;
+	ptxdesc = (PTXDESC_8195A)pxmitbuf->pbuf;
+	ptxdesc->txpktsize = p->length;
+	ptxdesc->offset = SIZE_TX_DESC_8195a;
+	ptxdesc->type = TX_H2C_CMD;//indicate transmittion of H2C packet
+	ptxdesc->bus_agg_num = 0;//to do
+	if (copy_from_user((pxmitbuf->pbuf + SIZE_TX_DESC_8195a), p->pointer, p->length))
 	{
-		ret = -ENOMEM;
-		rtw_mfree((u8*)pcmd, sizeof(struct cmd_obj));
-		goto exit;
-	}
-	if (copy_from_user((pcmd->parmbuf), p->pointer, p->length))
-	{
-		rtw_free_cmd_obj(pcmd);
+		rtw_free_xmitbuf(padapter, pxmitbuf);
 		ret = -EFAULT;
 		goto exit;
 	}
-	if(rtw_hal_mgnt_xmit(padapter, pcmd) == _FALSE){
+	
+	if(rtw_hal_mgnt_xmit(padapter, pxmitbuf) == _FALSE){
 		ret = -ENOMEM;
 		goto exit;
 	}
 
 exit:
+_func_exit_;
 	return ret;
 }
 int rtw_ioctl(struct net_device *pnetdev, struct ifreq *rq, int cmd)

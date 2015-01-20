@@ -29,6 +29,7 @@
 
 #ifdef CONFIG_SDIO_HCI 
 	#include "sdio_ops_linux.h"
+	#include "8195_sdio_reg.h"
 #elif defined(CONFIG_USB_HCI)
 	#include "usb_ops_linux.h"
 #endif
@@ -49,7 +50,7 @@ static void _fill_tx_des(
 	ptx_des->txpktsize = pktsize;
 	ptx_des->type = code;
 }
-
+int fw_len = 0;
 static int
 _BlockWrite(
 	IN		PADAPTER		padapter,
@@ -59,7 +60,7 @@ _BlockWrite(
 	)
 {
 	int ret = _SUCCESS;
-	u32		blockSize	= 128;
+	u32		blockSize	= 2048;
 	u32		remainSize	= 0;
 	u32		blockCount	= 0;
 	u8		*bufferPtr	= (u8*)pdata;
@@ -79,11 +80,15 @@ _BlockWrite(
 
 	for (i = 0; i < blockCount; i++)
 	{
-		_fill_tx_des(tx_buff, 1, blockSize, MEM_WRITE);
+		_fill_tx_des(tx_buff, 0, blockSize, TX_MEM_WRITE);
 		_rtw_memcpy(tx_buff + SIZE_TX_DESC_8195a, bufferPtr+i*blockSize, blockSize);
-		
+		fw_len += blockSize;
+		DBG_871X("%s(): block write ==> fw_len: %d\n", __FUNCTION__, fw_len);
+#ifdef CONFIG_USB_HCI
 		ret = rtw_writeN(padapter, (FW_8195A_START_ADDRESS + i * blockSize), blockSize+SIZE_TX_DESC_8195a, tx_buff);
-
+#else
+		ret = rtw_write_port(padapter, WLAN_TX_FIFO_DEVICE_ID, blockSize+SIZE_TX_DESC_8195a, tx_buff);
+#endif
 		if(ret == _FAIL)
 			goto exit;
 	}
@@ -91,12 +96,16 @@ _BlockWrite(
 	{
 		offset = blockCount * blockSize;
 
-		_fill_tx_des(tx_buff, 1, remainSize, MEM_WRITE);
+		_fill_tx_des(tx_buff, 0, remainSize, TX_MEM_WRITE);
 		_rtw_memcpy(tx_buff + SIZE_TX_DESC_8195a, bufferPtr+offset, remainSize);
 
-			
+		fw_len += remainSize;
+		DBG_871X("%s(): remain size ==> fw_len: %d\n", __FUNCTION__, fw_len);	
+#ifdef CONFIG_USB_HCI
 		ret = rtw_writeN(padapter, (FW_8195A_START_ADDRESS + offset), remainSize, tx_buff);
-			
+#else
+		ret = rtw_write_port(padapter, WLAN_TX_FIFO_DEVICE_ID, remainSize+SIZE_TX_DESC_8195a, tx_buff);			
+#endif
 		if(ret == _FAIL)
 			goto exit;
 	}
@@ -207,7 +216,7 @@ _PageWrite(
 	rtw_write8(padapter, REG_MCUFWDL+2,value8);
 
 #endif 
-
+	DBG_871X("%s(): fw size: %d\n", __FUNCTION__, size);
 	ret = _BlockWrite(padapter,tx_buff,pdata,size);
 
 exit:	

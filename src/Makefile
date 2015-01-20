@@ -6,8 +6,8 @@ EXTRA_CFLAGS += -I$(src)/include
 CONFIG_RTL8195A = y
 
 ######################### Interface ###########################
-CONFIG_USB_HCI = n
-CONFIG_SDIO_HCI = y
+CONFIG_USB_HCI = y
+CONFIG_SDIO_HCI = n
 
 ###############################################################
 export TopDIR ?= $(shell pwd)

@@ -79,17 +79,17 @@ u32	rtw_hal_inirp_deinit(_adapter *padapter)
 	return _FAIL;	
 }
 
-s32	rtw_hal_xmit(PADAPTER padapter, struct xmit_buf *pxmitbuf)
+s32	rtw_hal_xmit(_adapter *padapter, struct xmit_buf *pxmitbuf)
 {
 	if(padapter->HalFunc.hal_xmit)
 		return padapter->HalFunc.hal_xmit(padapter, pxmitbuf);
 
 	return _FAIL;	
 }
-s32	rtw_hal_mgnt_xmit(PADAPTER padapter, struct cmd_obj *pcmd)
+s32	rtw_hal_mgnt_xmit(_adapter *padapter, struct xmit_buf *pxmitbuf)
 {
 	if(padapter->HalFunc.hal_mgnt_xmit)
-		return padapter->HalFunc.hal_mgnt_xmit(padapter, pcmd);
+		return padapter->HalFunc.hal_mgnt_xmit(padapter, pxmitbuf);
 
 	return _FAIL;	
 }

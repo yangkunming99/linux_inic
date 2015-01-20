@@ -26,15 +26,32 @@
 #include "sdio_ops.h"
 #include "rtl8195a_xmit.h"
 #include "rtl8195a_recv.h"
+#include "rtl8195a_hal.h"
+#include "8195_sdio_reg.h"
 
 static u32 rtl8195as_hal_init(PADAPTER padapter){
+	u8 res = _SUCCESS;
+	u8 value8;
+	//
+	// Configure SDIO TxRx Control to enable Rx DMA timer masking.
+	// 2010.02.24.
+	//
+//	value8 = SdioLocalCmd52Read1Byte(padapter, SDIO_REG_TX_CTRL);
+//	SdioLocalCmd52Write1Byte(padapter, SDIO_REG_TX_CTRL, 0x02);
+
+//	rtw_write8(padapter, SDIO_LOCAL_OFFSET|SDIO_REG_HRPWM, 0);
+
+#ifdef CONFIG_FWDL
+	res = rtl8195a_FirmwareDownload(padapter,_FAIL);
+#endif
+	
 	InitInterrupt8195ASdio(padapter);
-	return _SUCCESS;
+	return res;
 }
 
 static u32 rtl8195as_hal_deinit(PADAPTER padapter){
-
-	return _SUCCESS;
+	u8 res = _SUCCESS;
+	return res;
 }
 
 void rtl8195as_set_hal_ops(PADAPTER padapter)

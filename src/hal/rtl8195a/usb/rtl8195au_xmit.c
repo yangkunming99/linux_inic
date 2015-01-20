@@ -43,6 +43,7 @@ s32 rtl8195au_hal_xmit_handler(PADAPTER padapter)
 
 s32 rtl8195au_hal_xmit(PADAPTER padapter, struct xmit_buf *pxmitbuf)
 {
+#if 0
 	struct xmit_priv 	*pxmitpriv = &padapter->xmitpriv;
 	_irqL irqL;
 	_pkt *pkt = pxmitbuf->pkt;
@@ -68,7 +69,22 @@ s32 rtl8195au_hal_xmit(PADAPTER padapter, struct xmit_buf *pxmitbuf)
 	/* wake up transmit thread */
 	_rtw_up_sema(&pxmitpriv->xmit_sema);
 	return _TRUE;
+#endif
+	struct xmit_priv 	*pxmitpriv = &padapter->xmitpriv;
+	_irqL irqL;
+_func_enter_;
+	//enqueue xmitbuf
+_enter_critical_bh(&pxmitpriv->xmitbuf_pending_queue.lock, &irqL);
+	rtw_list_insert_tail(&pxmitbuf->list, get_list_head(&pxmitpriv->xmitbuf_pending_queue));
+_exit_critical_bh(&pxmitpriv->xmitbuf_pending_queue.lock, &irqL);
+_func_exit_;
+	_rtw_up_sema(&pxmitpriv->xmit_sema);
+	return _TRUE;
 }
+s32 rtl8195au_hal_mgnt_xmit(PADAPTER padapter, struct xmit_buf *pxmitbuf){
+	return _TRUE;
+}
+#if 0
 s32 rtl8195au_hal_mgnt_xmit(PADAPTER padapter, struct cmd_obj *pcmd)
 {
 	struct xmit_priv	*pxmitpriv = &padapter->xmitpriv;
@@ -97,4 +113,4 @@ _exit_critical_bh(&pxmitpriv->xmitbuf_pending_queue.lock, &irqL);
 	_rtw_up_sema(&pxmitpriv->xmit_sema);
 	return _TRUE;
 }
-
+#endif

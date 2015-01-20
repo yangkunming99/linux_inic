@@ -7,7 +7,7 @@
 #ifdef CONFIG_FILE_FWIMG
 
 //char *rtw_fw_file_path = "/system/etc/firmware/rtlwifi/FW_NIC.BIN";
-char *rtw_fw_file_path = "/home/jimmy/share/FW_NIC.bin";
+char *rtw_fw_file_path = "/etc/FW_NIC.bin";
 
 module_param(rtw_fw_file_path, charp, 0644);
 MODULE_PARM_DESC(rtw_fw_file_path, "The path of fw image");
