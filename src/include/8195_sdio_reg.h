@@ -39,19 +39,20 @@
 #define SDIO_REG_C2H_MSG_EXT					0x6c // 4bytes, sync from CPU_C2H_MSG_EXT
 #define SDIO_REG_HRPWM						0x80 // 1byte, driver to FW, host domain, sync to CRPWM
 #define SDIO_REG_HRPWM2						0x82 // 2bytes, driver to FW, host domain, sync to CRPWM2
+#define SDIO_REG_CPU_IND						0x87 // 1 bytes, firmware indication to host
 
 // SDIO Host Interrupt Service Routine
-#define SDIO_HISR_RX_REQUEST				BIT0
-#define SDIO_HISR_AVAL_INT				BIT1
-#define SDIO_HISR_TXPKT_OVER_BUFF		BIT2
-#define SDIO_HISR_TX_AGG_SIZE_MISMATCH	BIT3
+#define SDIO_HISR_RX_REQUEST					(BIT0)
+#define SDIO_HISR_AVAL_INT					(BIT1)
+#define SDIO_HISR_TXPKT_OVER_BUFF			(BIT2)
+#define SDIO_HISR_TX_AGG_SIZE_MISMATCH		(BIT3)
 //BIT4~16 not used
-#define SDIO_HISR_C2H_MSG_INT			BIT17
-#define SDIO_HISR_CPWM1					BIT18
-#define SDIO_HISR_CPWM2					BIT19
-#define SDIO_HISR_H2C_BUS_FAIL			BIT20
-#define SDIO_HISR_TXBD_OVF				BIT21
-#define SDIO_HISR_CPU_NOT_RDY			BIT22
+#define SDIO_HISR_C2H_MSG_INT				(BIT17)
+#define SDIO_HISR_CPWM1						(BIT18)
+#define SDIO_HISR_CPWM2						(BIT19)
+#define SDIO_HISR_H2C_BUS_FAIL				(BIT20)
+#define SDIO_HISR_TXBD_OVF					(BIT21)
+#define SDIO_HISR_CPU_NOT_RDY				(BIT22)
 //BIT23~31 not used
 
 #define MASK_SDIO_HISR_CLEAR				(SDIO_HISR_TXPKT_OVER_BUFF|\
@@ -64,18 +65,28 @@
 											SDIO_HISR_CPU_NOT_RDY)
 											
 // RTL8195A SDIO Host Interrupt Mask Register
-#define SDIO_HIMR_RX_REQUEST_MSK		BIT0
-#define SDIO_HIMR_AVAL_MSK				BIT1
-#define SDIO_HIMR_TXPKT_SIZE_OVER_BUFF_MSK		BIT2
-#define SDIO_HIMR_AGG_SIZE_MISMATCH_MSK		BIT3
+#define SDIO_HIMR_RX_REQUEST_MSK				(BIT0)
+#define SDIO_HIMR_AVAL_MSK						(BIT1)
+#define SDIO_HIMR_TXPKT_SIZE_OVER_BUFF_MSK		(BIT2)
+#define SDIO_HIMR_AGG_SIZE_MISMATCH_MSK		(BIT3)
 //BIT4~16 not used
-#define SDIO_HIMR_C2H_MSG_MSK					BIT17
-#define SDIO_HIMR_CPWM1_MSK						BIT18
-#define SDIO_HIMR_CPWM2_MSK						BIT19
-#define SDIO_HIMR_H2C_BUS_FAIL_MSK				BIT20
-#define SDIO_HIMR_TXBD_OVF_MSK					BIT21
-#define SDIO_HIMR_CPU_NOT_RDY_MSK				BIT22
+#define SDIO_HIMR_C2H_MSG_MSK					(BIT17)
+#define SDIO_HIMR_CPWM1_MSK						(BIT18)
+#define SDIO_HIMR_CPWM2_MSK						(BIT19)
+#define SDIO_HIMR_H2C_BUS_FAIL_MSK				(BIT20)
+#define SDIO_HIMR_TXBD_OVF_MSK					(BIT21)
+#define SDIO_HIMR_CPU_NOT_RDY_MSK				(BIT22)
 //BIT23~31 not used
 
 #define SDIO_HIMR_DISABLED			0
+
+// CCPWM2 bit map definition for Firmware download
+#define SDIO_INIT_DONE					(BIT0)
+#define SDIO_MEM_WR_DONE				(BIT1)
+#define SDIO_MEM_RD_DONE				(BIT2)
+#define SDIO_MEM_ST_DONE				(BIT3)
+#define SDIO_CPWM2_TOGGLE			(BIT15)
+
+// Register REG_SPDIO_CPU_IND
+#define SDIO_SYSTEM_TRX_RDY_IND		(BIT0)
 #endif

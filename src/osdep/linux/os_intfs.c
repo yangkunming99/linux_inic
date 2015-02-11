@@ -7,7 +7,8 @@
 #ifdef CONFIG_FILE_FWIMG
 
 //char *rtw_fw_file_path = "/system/etc/firmware/rtlwifi/FW_NIC.BIN";
-char *rtw_fw_file_path = "/etc/FW_NIC.bin";
+//char *rtw_fw_file_path = "/home/jimmy/share/FW_NIC.bin";
+char *rtw_fw_file_path = "/etc/ota.bin";
 
 module_param(rtw_fw_file_path, charp, 0644);
 MODULE_PARM_DESC(rtw_fw_file_path, "The path of fw image");
@@ -144,7 +145,7 @@ int netdev_open(struct net_device *pnetdev)
 		}
 		padapter->bup = _TRUE;
 	}
-	padapter->netif_up = _FALSE;
+	padapter->net_closed = _FALSE;
 	if(!rtw_netif_queue_stopped(pnetdev))
 		rtw_netif_start_queue(pnetdev);
 	else
@@ -163,22 +164,71 @@ netdev_open_error:
 }
 int netdev_close(struct net_device *pnetdev)
 {
-	int ret = 0;
+	int i, ret = 0;
 	PADAPTER padapter = (PADAPTER)rtw_netdev_priv(pnetdev);
 	RT_TRACE(_module_os_intfs_c_,_drv_info_,("+871x_drv - drv_close\n"));
 	padapter->net_closed = _TRUE;
 	padapter->netif_up = _FALSE;
 	if(pnetdev)
 	{
-		if (!rtw_netif_queue_stopped(pnetdev))
-			rtw_netif_stop_queue(pnetdev);
-		netif_carrier_off(pnetdev);
-		rtw_stop_drv_threads(padapter);
+		rtw_os_indicate_disconnect(pnetdev);
+	}
+	if(padapter->fw_status && !padapter->bSurpriseRemoved){
+		rtw_disassoc_cmd(padapter);
+#if 1
+		for(i=0;i<100;i++){
+			if(padapter->fw_status == 0)
+				break;
+			rtw_msleep_os(10);
+		}
+		if(i == 100){
+			DBG_871X("%s: disassoc cmd failed\n", __FUNCTION__);
+		}
+#endif
 	}
 	RT_TRACE(_module_os_intfs_c_,_drv_info_,("-871x_drv - drv_close\n"));
 	DBG_871X("-871x_drv - drv_close, bup=%d\n", padapter->bup);
 	return ret;
 }
+
+void rtw_dev_unload(PADAPTER padapter)
+{
+	RT_TRACE(_module_hci_intfs_c_, _drv_notice_, ("+%s\n",__FUNCTION__));
+
+	if (padapter->bup == _TRUE)
+	{
+		DBG_871X("===> %s\n",__FUNCTION__);
+
+		padapter->bDriverStopped = _TRUE;
+
+		if (padapter->intf_stop)
+			padapter->intf_stop(padapter);
+		
+		RT_TRACE(_module_hci_intfs_c_, _drv_notice_, ("@ rtw_dev_unload: stop intf complete!\n"));
+
+		rtw_stop_drv_threads(padapter);
+		
+		RT_TRACE(_module_hci_intfs_c_, _drv_notice_, ("@ %s: stop thread complete!\n",__FUNCTION__));
+
+		if (padapter->bSurpriseRemoved == _FALSE)
+		{
+			rtw_hal_deinit(padapter);
+			padapter->bSurpriseRemoved = _TRUE;
+		}
+		RT_TRACE(_module_hci_intfs_c_, _drv_notice_, ("@ %s: deinit hal complelt!\n",__FUNCTION__));
+
+		padapter->bup = _FALSE;
+
+		DBG_871X("<=== %s\n",__FUNCTION__);
+	}
+	else {
+		RT_TRACE(_module_hci_intfs_c_, _drv_notice_, ("%s: bup==_FALSE\n",__FUNCTION__));
+		DBG_871X("%s: bup==_FALSE\n",__FUNCTION__);
+	}
+	
+	RT_TRACE(_module_hci_intfs_c_, _drv_notice_, ("-%s\n",__FUNCTION__));
+}
+
 static int rtw_net_set_mac_address(struct net_device *pnetdev, void *p)
 {
 //	_adapter *padapter = (_adapter *)rtw_netdev_priv(pnetdev);

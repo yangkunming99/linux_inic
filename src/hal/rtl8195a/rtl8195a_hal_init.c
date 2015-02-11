@@ -25,7 +25,7 @@
 #include <8195_com_reg.h>
 #include <rtw_io.h>
 #include <8195_desc.h>
-#define MAX_REG_BOLCK_SIZE	196 
+
 
 #ifdef CONFIG_SDIO_HCI 
 	#include "sdio_ops_linux.h"
@@ -34,198 +34,111 @@
 	#include "usb_ops_linux.h"
 #endif
 
-static void _fill_tx_des(
-	IN	PVOID	tx_buff,
-	u8	agg_num,
-	u32 pktsize,
-	u32 code
-	){
-	/* fill tx descriptor here*/
-
-	PTXDESC_8195A	ptx_des;
-	
-	ptx_des = (PTXDESC_8195A)tx_buff;
-	ptx_des->bus_agg_num = agg_num;
-	ptx_des->offset = SIZE_TX_DESC_8195a;
-	ptx_des->txpktsize = pktsize;
-	ptx_des->type = code;
-}
-int fw_len = 0;
+#ifdef CONFIG_SDIO_HCI
 static int
-_BlockWrite(
-	IN		PADAPTER		padapter,
-	IN		PVOID		tx_buff,
-	IN		PVOID		pdata,
-	IN		u32			buffSize
-	)
-{
-	int ret = _SUCCESS;
-	u32		blockSize	= 2048;
-	u32		remainSize	= 0;
-	u32		blockCount	= 0;
-	u8		*bufferPtr	= (u8*)pdata;
-	u32		i=0, offset=0;	
-#ifdef CONFIG_USB_HCI
-	blockSize = MAX_REG_BOLCK_SIZE;
-#endif
-
-	blockCount = buffSize / blockSize;
-	remainSize = buffSize % blockSize;
-
-	if (blockCount) {
-			RT_TRACE(_module_hal_init_c_, _drv_notice_,
-					("_BlockWrite: [P1] buffSize(%d) blockSize(%d) blockCount(%d) remainSize(%d)\n",
-					buffSize, blockSize, blockCount, remainSize));
-		}
-
-	for (i = 0; i < blockCount; i++)
-	{
-		_fill_tx_des(tx_buff, 0, blockSize, TX_MEM_WRITE);
-		_rtw_memcpy(tx_buff + SIZE_TX_DESC_8195a, bufferPtr+i*blockSize, blockSize);
-		fw_len += blockSize;
-		DBG_871X("%s(): block write ==> fw_len: %d\n", __FUNCTION__, fw_len);
-#ifdef CONFIG_USB_HCI
-		ret = rtw_writeN(padapter, (FW_8195A_START_ADDRESS + i * blockSize), blockSize+SIZE_TX_DESC_8195a, tx_buff);
-#else
-		ret = rtw_write_port(padapter, WLAN_TX_FIFO_DEVICE_ID, blockSize+SIZE_TX_DESC_8195a, tx_buff);
-#endif
-		if(ret == _FAIL)
-			goto exit;
-	}
-	if (remainSize)
-	{
-		offset = blockCount * blockSize;
-
-		_fill_tx_des(tx_buff, 0, remainSize, TX_MEM_WRITE);
-		_rtw_memcpy(tx_buff + SIZE_TX_DESC_8195a, bufferPtr+offset, remainSize);
-
-		fw_len += remainSize;
-		DBG_871X("%s(): remain size ==> fw_len: %d\n", __FUNCTION__, fw_len);	
-#ifdef CONFIG_USB_HCI
-		ret = rtw_writeN(padapter, (FW_8195A_START_ADDRESS + offset), remainSize, tx_buff);
-#else
-		ret = rtw_write_port(padapter, WLAN_TX_FIFO_DEVICE_ID, remainSize+SIZE_TX_DESC_8195a, tx_buff);			
-#endif
-		if(ret == _FAIL)
-			goto exit;
-	}
-
-#if 0
-	u32			blockSize_p1 = 4;	// (Default) Phase #1 : PCI muse use 4-byte write to download FW
-	u32			blockSize_p2 = 8;	// Phase #2 : Use 8-byte, if Phase#1 use big size to write FW.
-	u32			blockSize_p3 = 1;	// Phase #3 : Use 1-byte, the remnant of FW image.
-	u32			blockCount_p1 = 0, blockCount_p2 = 0, blockCount_p3 = 0;
-	u32			remainSize_p1 = 0, remainSize_p2 = 0;
-	u8			*bufferPtr	= (u8*)buffer;
-	u32			i=0, offset=0;
-
-#ifdef CONFIG_USB_HCI
-	blockSize_p1 = MAX_REG_BOLCK_SIZE;
-#endif
-
-	//3 Phase #1
-	blockCount_p1 = buffSize / blockSize_p1;
-	remainSize_p1 = buffSize % blockSize_p1;
-
-	if (blockCount_p1) {
-		RT_TRACE(_module_hal_init_c_, _drv_notice_,
-				("_BlockWrite: [P1] buffSize(%d) blockSize_p1(%d) blockCount_p1(%d) remainSize_p1(%d)\n",
-				buffSize, blockSize_p1, blockCount_p1, remainSize_p1));
-	}
-
-	for (i = 0; i < blockCount_p1; i++)
-	{
-#ifdef CONFIG_USB_HCI
-		ret = rtw_writeN(padapter, (FW_8195A_START_ADDRESS + i * blockSize_p1), blockSize_p1, (bufferPtr + i * blockSize_p1));
-#else
-		ret = rtw_write32(padapter, (FW_8195A_START_ADDRESS + i * blockSize_p1), le32_to_cpu(*((u32*)(bufferPtr + i * blockSize_p1))));
-#endif
-
-		if(ret == _FAIL)
-			goto exit;
-	}
-
-
-	//3 Phase #2
-	if (remainSize_p1)
-	{
-		offset = blockCount_p1 * blockSize_p1;
-
-		blockCount_p2 = remainSize_p1/blockSize_p2;
-		remainSize_p2 = remainSize_p1%blockSize_p2;
-
-		if (blockCount_p2) {
-				RT_TRACE(_module_hal_init_c_, _drv_notice_,
-						("_BlockWrite: [P2] buffSize_p2(%d) blockSize_p2(%d) blockCount_p2(%d) remainSize_p2(%d)\n",
-						(buffSize-offset), blockSize_p2 ,blockCount_p2, remainSize_p2));
-		}
-
-#ifdef CONFIG_USB_HCI
-		for (i = 0; i < blockCount_p2; i++) {
-			ret = rtw_writeN(padapter, (FW_8195A_START_ADDRESS + offset + i*blockSize_p2), blockSize_p2, (bufferPtr + offset + i*blockSize_p2));
-			
-			if(ret == _FAIL)
-				goto exit;
-		}
-#endif
-	}
-
-	//3 Phase #3
-	if (remainSize_p2)
-	{
-		offset = (blockCount_p1 * blockSize_p1) + (blockCount_p2 * blockSize_p2);
-
-		blockCount_p3 = remainSize_p2 / blockSize_p3;
-
-		RT_TRACE(_module_hal_init_c_, _drv_notice_,
-				("_BlockWrite: [P3] buffSize_p3(%d) blockSize_p3(%d) blockCount_p3(%d)\n",
-				(buffSize-offset), blockSize_p3, blockCount_p3));
-
-		for(i = 0 ; i < blockCount_p3 ; i++){
-			ret =rtw_write8(padapter, (FW_8195A_START_ADDRESS + offset + i), *(bufferPtr + offset + i));
-			
-			if(ret == _FAIL)
-				goto exit;
-		}
-	}
-#endif
-exit:
-	return ret;
-}
-
-static int
-_PageWrite(
+_FwPageWrite(
 	IN		PADAPTER	padapter,
-	IN		u32			page,
+	IN		u32			offset,
 	IN		PVOID		pdata,
 	IN		u32			size
 	)
 {
-	u8 ret = _SUCCESS;
+	u8 ret = _FAIL;
 	u8 * tx_buff;
-		
-	tx_buff = rtw_zmalloc(MAX_REG_BOLCK_SIZE + SIZE_TX_DESC_8195a);
+	TX_DESC_MW	*ptx_des;
+	u32 buf_sz;
+	//    RX_DESC_MW rxdesc;
+	u32 i;
+	u16 old_hcpwm2;
+	u16 new_hcpwm2;
+
+	old_hcpwm2 = rtw_read16(padapter, SDIO_REG_HCPWM2); 
+        
+	buf_sz = (((size + SIZE_TX_DESC_8195a - 1) >> 9)+1) << 9;
+	tx_buff = rtw_zmalloc(buf_sz);
 	if(tx_buff == NULL)
 		goto exit;
-		
+
+	ptx_des = (TX_DESC_MW *)tx_buff;
+	ptx_des->txpktsize = cpu_to_le16(size);
+	ptx_des->offset = SIZE_TX_DESC_8195a;
+	ptx_des->bus_agg_num = 1;
+	ptx_des->type = TX_MEM_WRITE;
+	ptx_des->reply = 0;
+	ptx_des->start_addr = cpu_to_le32(offset);
+	ptx_des->write_len = cpu_to_le16(size);
+
+	_rtw_memcpy(tx_buff + SIZE_TX_DESC_8195a, pdata, size);
+	ret = rtw_write_port(padapter, WLAN_TX_FIFO_DEVICE_ID, (size + SIZE_TX_DESC_8195a), tx_buff);
+	rtw_msleep_os(50); // wait memory write done
+
+	for (i=0;i<100;i++) {
+		new_hcpwm2 = rtw_read16(padapter, SDIO_REG_HCPWM2); 
+		if ((new_hcpwm2 & BIT15) != (old_hcpwm2 & BIT15)) {
+			// toggle bit(15)  is changed, it means the 8195a update its register value
+			old_hcpwm2 = new_hcpwm2;
+			if (new_hcpwm2 & SDIO_MEM_WR_DONE) {
+				// 8195a memory write done
+				ret = _SUCCESS;
+				break;
+			}
+			rtw_msleep_os(10);
+		}
+		else {
+			rtw_msleep_os(10);
+		}        
+	}
+
 #if 0
-	u8 value8;
-	u8 u8Page = (u8) (page & 0x07) ;
+    // wait and check the memory write reply from NIC device
+    if (ptx_des->reply) {
+        for (i=0;i<100;i++) {
+            ret = rtw_read_port(padapter, WLAN_RX_FIFO_DEVICE_ID, sizeof(RX_DESC_MW), (u8*)&rxdesc);
+            if (ret == _SUCCESS) {
+                if ((rxdesc.type == MEM_WRITE_RSP) && 
+                    (le32_to_cpu(rxdesc.start_addr) == offset)) {
+                    DBG_871X("%s: Got the Memory Write Reply %x\n", __FUNCTION__, rxdesc.result);
+                    if (rxdesc.result != 0) {
+                        ret = _FAIL;
+                    }
+                    break;
+                }
+                else { 
+                    // TODO: handle this packet, it should be a memory write reply packet , but it's not.
+                }
+            }
+            else {
+                DBG_871X("%s: Read port error\n", __FUNCTION__);
+                msleep(10);
+            }
+        }
 
-	value8 = (rtw_read8(padapter, REG_MCUFWDL+2) & 0xF8) | u8Page ;
-	rtw_write8(padapter, REG_MCUFWDL+2,value8);
-
-#endif 
-	DBG_871X("%s(): fw size: %d\n", __FUNCTION__, size);
-	ret = _BlockWrite(padapter,tx_buff,pdata,size);
+        if(i==100) {
+            ret = _FAIL;
+        }
+    }
+#endif
 
 exit:	
 	if(tx_buff)
-		rtw_mfree(tx_buff,MAX_REG_BOLCK_SIZE + SIZE_TX_DESC_8195a);
+		rtw_mfree(tx_buff, buf_sz);
 	return ret;
 }
-
-
+#endif
+#ifdef CONFIG_USB_HCI
+static int
+_FwPageWrite(
+	IN		PADAPTER	padapter,
+	IN		u32			offset,
+	IN		PVOID		pdata,
+	IN		u32			size
+	)
+{
+	u8 ret = _FAIL;
+//todo: usb write fw to ameba
+	return ret;
+}
+#endif
 static int
 _WriteFW(
 	IN		PADAPTER		padapter,
@@ -233,28 +146,38 @@ _WriteFW(
 	IN		u32			size
 	)
 {
-	// Since we need dynamic decide method of dwonload fw, so we call this function to get chip version.
-	// We can remove _ReadChipVersion from ReadpadapterInfo8192C later.
 	int ret = _SUCCESS;
 	u32 	pageNums,remainSize ;
 	u32 	page, offset;
-	u8		*bufferPtr = (u8*)buffer;
+	u8	*bufferPtr = (u8*)buffer;
+	u32  fw_startaddr;
 
 	pageNums = size / MAX_DLFW_PAGE_SIZE ;
-	//RT_ASSERT((pageNums <= 4), ("Page numbers should not greater then 4 \n"));
 	remainSize = size % MAX_DLFW_PAGE_SIZE;
+
+	fw_startaddr = padapter->FirmwareStartAddr;
 
 	for (page = 0; page < pageNums; page++) {
 		offset = page * MAX_DLFW_PAGE_SIZE;
-		ret = _PageWrite(padapter, page, bufferPtr+offset, MAX_DLFW_PAGE_SIZE);
 		
-		if(ret == _FAIL)
+		DBG_871X("%s: Write Mem: StartAddr=0x%08x Len=%d\n", __FUNCTION__
+		    ,(fw_startaddr+offset), MAX_DLFW_PAGE_SIZE);
+
+		ret = _FwPageWrite(padapter, (fw_startaddr+offset), bufferPtr+offset, MAX_DLFW_PAGE_SIZE);
+		if(ret == _FAIL) {
+			DBG_871X("%s: Error!", __FUNCTION__);
 			goto exit;
+		}
 	}
+	
 	if (remainSize) {
 		offset = pageNums * MAX_DLFW_PAGE_SIZE;
 		page = pageNums;
-		ret = _PageWrite(padapter, page, bufferPtr+offset, remainSize);
+
+	        DBG_871X("%s: Write Mem (Remain): StartAddr=0x%08x Len=%d\n", __FUNCTION__
+	            ,(fw_startaddr+offset), remainSize);
+			
+		ret = _FwPageWrite(padapter, (fw_startaddr+offset), bufferPtr+offset, remainSize);
 		
 		if(ret == _FAIL)
 			goto exit;
@@ -265,8 +188,21 @@ _WriteFW(
 exit:
 	return ret;
 }
-
+static s32 check_firmware_status(_adapter *padapter){
+	u8 fw_ready;
+	s32 ret = _FAIL;
+#ifdef CONFIG_SDIO_HCI
+	fw_ready = rtw_read8(padapter, SDIO_REG_CPU_IND); 
+	DBG_871X("%s: cpu_ind @ 0x%02x\n", __FUNCTION__, fw_ready);
+	if (fw_ready&SDIO_SYSTEM_TRX_RDY_IND) {
+		ret = _SUCCESS;
+		DBG_871X("%s: firmware is already running!\n", __FUNCTION__);
+	}
+#endif
+	return ret;
+}
 extern u8 g_fwdl_chksum_fail;
+extern u8 g_fwdl_wintint_rdy_fail;
 static s32 polling_fwdl_chksum(_adapter *adapter, u32 min_cnt, u32 timeout_ms)
 {
 	s32 ret = _FAIL;
@@ -302,84 +238,69 @@ static s32 polling_fwdl_chksum(_adapter *adapter, u32 min_cnt, u32 timeout_ms)
 
 	return ret;
 }
-
-void _MCUIO_Reset88E(PADAPTER padapter,u8 bReset)
-{
-/*
-	u8 u1bTmp;
-
-	if(bReset==_TRUE){
-		// Reset MCU IO Wrapper- sugggest by SD1-Gimmy
-		u1bTmp = rtw_read8(padapter, REG_RSV_CTRL+1);
-		rtw_write8(padapter,REG_RSV_CTRL+1, (u1bTmp&(~BIT3)));
-	}else{
-		// Enable MCU IO Wrapper
-		u1bTmp = rtw_read8(padapter, REG_RSV_CTRL+1);
-		rtw_write8(padapter, REG_RSV_CTRL+1, u1bTmp|BIT3);
-	}
-*/
-}
-
-void _8051Reset88E(PADAPTER padapter)
-{
-/*
-	u8 u1bTmp;
-	
-	_MCUIO_Reset88E(padapter,_TRUE);
-	u1bTmp = rtw_read8(padapter, REG_SYS_FUNC_EN+1);
-	rtw_write8(padapter, REG_SYS_FUNC_EN+1, u1bTmp&(~BIT2));
-	_MCUIO_Reset88E(padapter,_FALSE);
-	rtw_write8(padapter, REG_SYS_FUNC_EN+1, u1bTmp|(BIT2));
-	
-	DBG_871X("=====> _8051Reset88E(): 8051 reset success .\n");
-*/
-}
-
-extern u8 g_fwdl_wintint_rdy_fail;
 static s32 _FWFreeToGo(_adapter *adapter, u32 min_cnt, u32 timeout_ms)
 {
 	s32 ret = _FAIL;
-	u32 start = rtw_get_current_time();
+	//u32 start = rtw_get_current_time();
+	//u8 fw_ready;
+	u32 i;
 
-	u32	value32 = 0;
-	u32 cnt = 0;
+	TX_DESC_JS	tx_des;
+	
+	tx_des.txpktsize = 0;
+	tx_des.offset = SIZE_TX_DESC_8195a;
+	tx_des.bus_agg_num = 1;
+	tx_des.type = TX_FM_FREETOGO;
+	tx_des.start_fun = cpu_to_le32(adapter->FirmwareEntryFun);
+
+	DBG_871X("%s: Jump to Entry Func @ 0x%08x\n", __FUNCTION__
+	    ,adapter->FirmwareEntryFun);
+	ret = rtw_write_port(adapter, WLAN_TX_FIFO_DEVICE_ID, SIZE_TX_DESC_8195a, (u8 *)&tx_des);
 #if 0
+    // wait for the firmware going to re-load indication
+    rtw_msleep_os(80);
+    for (i=0;i<100;i++) {
+        fw_ready = rtw_read8(adapter, SDIO_REG_CPU_IND); 
+        if ((fw_ready & BIT0) == 0) {
+            // it means the boot firmware aware the jump command
+            break;
+        }
+        rtw_msleep_os(10);
+    }
 
-
-	value32 = rtw_read32(adapter, REG_MCUFWDL);
-	value32 |= MCUFWDL_RDY;
-	value32 &= ~WINTINI_RDY;
-	rtw_write32(adapter, REG_MCUFWDL, value32);
-
-	_8051Reset88E(adapter);
-
-	/*  polling for FW ready */
-	do {
-		cnt++;
-		value32 = rtw_read32(adapter, REG_MCUFWDL);
-		if (value32 & WINTINI_RDY || adapter->bSurpriseRemoved || adapter->bDriverStopped)
-			break;
-		rtw_yield_os();
-	} while (rtw_get_passing_time_ms(start) < timeout_ms || cnt < min_cnt);
-
-	if (!(value32 & WINTINI_RDY)) {
-		goto exit;
-	}
-
-	if (g_fwdl_wintint_rdy_fail) {
-		DBG_871X("%s: fwdl test case: wintint_rdy_fail\n", __FUNCTION__);
-		g_fwdl_wintint_rdy_fail--;
-		goto exit;
-	}
-#endif
+    // wait for the new downloaded firmware started
+    rtw_msleep_os(500);
+    for (i=0;i<100;i++) {
+        fw_ready = rtw_read8(adapter, SDIO_REG_CPU_IND); 
+        if (fw_ready & (BIT0)) {
+            break;
+        }
+        rtw_msleep_os(10);
+    }
+    
+    if (i==100) {
+        DBG_871X("%s: Wait Firmware Start Timeout!!\n", __FUNCTION__);
+	    ret = _FAIL;
+    }
+    else {
 	ret = _SUCCESS;
-
-//exit:
-	DBG_871X("%s: Polling FW ready %s! (%u, %dms), REG_MCUFWDL:0x%08x\n", __FUNCTION__
-		, (ret==_SUCCESS)?"OK":"Fail", cnt, rtw_get_passing_time_ms(start), value32);
+    }
+#endif
+	// TODO: Pooling firmware ready here
+	 for (i=0;i<100;i++) {
+		if(check_firmware_status(adapter) == _SUCCESS)
+			break;
+		rtw_msleep_os(10);
+	}
+	if (i==100) {
+		DBG_871X("%s: Wait Firmware Start Timeout!!\n", __FUNCTION__);
+		ret = _FAIL;
+	}
+	else {
+		ret = _SUCCESS;
+	}
 	return ret;
 }
-
 
 static VOID
 _FWDownloadEnable_8195A(
@@ -417,13 +338,12 @@ _FWDownloadEnable_8195A(
 #ifdef CONFIG_FILE_FWIMG
 extern char *rtw_fw_file_path;
 extern char *rtw_fw_wow_file_path;
-u8	FwBuffer8195a[FW_8195A_SIZE];
 #endif //CONFIG_FILE_FWIMG
 
 
 //
 //	Description:
-//		Download 8192C firmware code.
+//		Download 8195a firmware code.
 //
 //
 s32 rtl8195a_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw)
@@ -431,7 +351,7 @@ s32 rtl8195a_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw)
 	s32	rtStatus = _SUCCESS;
 	u8 write_fw = 0;
 	u32 fwdl_start_time;
-
+	
 #ifdef CONFIG_WOWLAN
 	u8			*FwImageWoWLAN;
 	u32			FwImageWoWLANLen;
@@ -439,6 +359,7 @@ s32 rtl8195a_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw)
 
 	PRT_FIRMWARE_8195A	pFirmware = NULL;
 	PRT_8195A_FIRMWARE_HDR		pFwHdr = NULL;
+    u8 *FwBuffer8195a=NULL;
 	
 	u8			*pFirmwareBuf;
 	u32			FirmwareLen;
@@ -447,6 +368,11 @@ s32 rtl8195a_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw)
 #endif // CONFIG_FILE_FWIMG
 
 	RT_TRACE(_module_hal_init_c_, _drv_info_, ("+%s\n", __FUNCTION__));
+
+	//check if firmware is already running
+	if(check_firmware_status(padapter) == _SUCCESS)
+		goto exit;
+
 	pFirmware = (PRT_FIRMWARE_8195A)rtw_zmalloc(sizeof(RT_FIRMWARE_8195A));
 	if(!pFirmware)
 	{
@@ -454,9 +380,13 @@ s32 rtl8195a_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw)
 		goto exit;
 	}
 
+	FwBuffer8195a = rtw_zmalloc(FW_8195A_SIZE);
+	if(!FwBuffer8195a)
+	{
+		rtStatus = _FAIL;
+		goto exit;
+	}
 
-
-//	RT_TRACE(_module_hal_init_c_, _drv_err_, ("rtl8723a_FirmwareDownload: %s\n", pFwImageFileName));
 
 #ifdef CONFIG_FILE_FWIMG
 #ifdef CONFIG_WOWLAN
@@ -483,7 +413,6 @@ s32 rtl8195a_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw)
 	{
 		pFirmware->eFWSource = FW_SOURCE_HEADER_FILE;
 	}
-
 
 	switch(pFirmware->eFWSource)
 	{
@@ -513,19 +442,31 @@ s32 rtl8195a_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw)
 	pFwHdr = (PRT_8195A_FIRMWARE_HDR)pFirmwareBuf;
 
 	padapter->FirmwareVersion =  le16_to_cpu(pFwHdr->Version);
-	padapter->FirmwareSubVersion = pFwHdr->Subversion;
-	padapter->FirmwareSignature = le16_to_cpu(pFwHdr->Signature);
+	padapter->FirmwareSubVersion = le16_to_cpu(pFwHdr->Subversion);
+	//	padapter->FirmwareSignature = le16_to_cpu(pFwHdr->Signature);
 
-	DBG_871X("%s: fw_ver=%x fw_subver=%04x sig=0x%x, Month=%02x, Date=%02x, Hour=%02x, Minute=%02x\n",
-		  __FUNCTION__, padapter->FirmwareVersion, padapter->FirmwareSubVersion, padapter->FirmwareSignature
-		  ,pFwHdr->Month,pFwHdr->Date,pFwHdr->Hour,pFwHdr->Minute);
-		
+	padapter->FirmwareEntryFun = le32_to_cpu(pFwHdr->StartFunc);
+	padapter->FirmwareStartAddr = le32_to_cpu(pFwHdr->StartAddr);
+	padapter->FirmwareSize = le32_to_cpu(pFwHdr->FwSize);
+
+	DBG_871X("%s: fw_ver=%04x fw_subver=%04x sig=%s\n",
+		  __FUNCTION__, padapter->FirmwareVersion, padapter->FirmwareSubVersion, pFwHdr->Signature);
+
+	DBG_871X("%s: fw_startaddr=0x%08x fw_size=%d fw_entry=0x%08x\n",
+	      __FUNCTION__, padapter->FirmwareStartAddr, padapter->FirmwareSize, padapter->FirmwareEntryFun);
+
+#if 0		
 	if (IS_FW_HEADER_EXIST_95A(pFwHdr))
 	{
 		// Shift 32 bytes for FW header
 		pFirmwareBuf = pFirmwareBuf + 32;
 		FirmwareLen = FirmwareLen - 32;
 	}
+#else    
+    // skip first 16 bytes
+    pFirmwareBuf = pFirmwareBuf + 16;
+    FirmwareLen = FirmwareLen - 16;
+#endif    
 /*
 	// Suggested by Filen. If 8051 is running in RAM code, driver should inform Fw to reset by itself,
 	// or it will cause download Fw fail. 2010.02.01. by tynli.
@@ -540,9 +481,6 @@ s32 rtl8195a_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw)
 	while(!padapter->bDriverStopped && !padapter->bSurpriseRemoved
 			&& (write_fw++ < 3 || rtw_get_passing_time_ms(fwdl_start_time) < 500))
 	{
-		/* reset FWDL chksum */
-//		rtw_write8(padapter, REG_MCUFWDL, rtw_read8(padapter, REG_MCUFWDL)|FWDL_ChkSum_rpt);
-		
 		rtStatus = _WriteFW(padapter, pFirmwareBuf, FirmwareLen);
 		if (rtStatus != _SUCCESS)
 			continue;
@@ -569,6 +507,10 @@ fwdl_stat:
 exit:
 	if (pFirmware)
 		rtw_mfree((u8*)pFirmware, sizeof(RT_FIRMWARE_8195A));
+
+	if (FwBuffer8195a)
+		rtw_mfree((u8*)FwBuffer8195a, FW_8195A_SIZE);
+
 	return rtStatus;
 }
 

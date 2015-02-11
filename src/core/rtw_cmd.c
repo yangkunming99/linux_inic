@@ -188,3 +188,39 @@ int rtw_cmd_thread(void *context)
 	}while((_SUCCESS == err)&&(pcmdpriv->cmdThread));
 	thread_exit();
 }
+
+u8 rtw_disassoc_cmd(_adapter*padapter) /* for sta_mode */
+{
+	u8 ret = _SUCCESS;
+
+	struct xmit_buf *pxmitbuf;
+	PTXDESC_8195A ptxdesc;
+
+	u8 *pcmd = "ATWD";
+_func_enter_;
+	pxmitbuf = rtw_alloc_xmitbuf(padapter);
+	if(!pxmitbuf)
+	{
+		DBG_871X("%s(): pxmitbuf allocated failed!\n", __FUNCTION__);
+		ret = _FAIL;
+		goto exit;
+	}
+	
+	pxmitbuf->pkt_len = 4 + SIZE_TX_DESC_8195a;
+	ptxdesc = (PTXDESC_8195A)pxmitbuf->pbuf;
+	ptxdesc->txpktsize = 4;
+	ptxdesc->offset = SIZE_TX_DESC_8195a;
+	ptxdesc->type = TX_H2C_CMD;//indicate transmittion of H2C packet
+	ptxdesc->bus_agg_num = 1;//to do
+	_rtw_memcpy((pxmitbuf->pbuf + SIZE_TX_DESC_8195a), pcmd, 4);
+	
+	if(rtw_hal_mgnt_xmit(padapter, pxmitbuf) == _FALSE){
+		ret = _FAIL;
+		goto exit;
+	}
+
+exit:
+_func_exit_;
+	return ret;
+}
+

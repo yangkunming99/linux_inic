@@ -25,4 +25,5 @@ void rtw_free_cmd_priv (PADAPTER padapter);
 void rtw_free_cmd_obj(struct cmd_obj *pcmd);
 s32	rtw_enqueue_cmd(_queue *queue, struct cmd_obj *obj);
 int rtw_cmd_thread(void *context);
+u8 rtw_disassoc_cmd(_adapter*padapter);/* for sta_mode */
 #endif

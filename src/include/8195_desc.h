@@ -1,6 +1,11 @@
 #ifndef __8195_DESC_H__
 #define __8195_DESC_H__
 
+#define PLATFORM_LITTLE_ENDIAN                  0
+#define PLATFORM_BIG_ENDIAN                     1
+
+#define SYSTEM_ENDIAN                           PLATFORM_LITTLE_ENDIAN
+
 // define transmit packat type
 #define TX_PACKET_802_3	(0x83)
 #define TX_PACKET_802_11	(0x81)
@@ -91,5 +96,291 @@ typedef struct _RX_DESC{
 } RX_DESC, *PRX_DESC;
 #define	SIZE_RX_DESC_8195a	(sizeof(RX_DESC))
 typedef struct _RX_DESC RXDESC_8195A, *PRXDESC_8195A;
+
+// TX Desc for Memory Write command
+typedef struct _TX_DESC_MW{
+	// u4Byte 0
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+	u32	txpktsize:16;       // bit[15:0]
+	u32	offset:8;    		// bit[23:16], store the sizeof(TX_DESC)
+	u32	bus_agg_num:8;		// bit[31:24], the bus aggregation number
+#else
+    u32 bus_agg_num:8;      // bit[31:24], the bus aggregation number
+    u32 offset:8;           // bit[23:16], store the sizeof(TX_DESC)
+    u32 txpktsize:16;       // bit[15:0]
+#endif
+
+	// u4Byte 1
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+    u32 type:8;             // bit[7:0], the packet type
+    u32 reply:1;            // bit[8], request to send a reply message
+    u32 rsvd0:23;
+#else
+    u32 rsvd0:23;
+    u32 reply:1;            // bit[8], request to send a reply message
+    u32 type:8;             // bit[7:0], the packet type
+#endif
+
+	// u4Byte 2
+	u32	start_addr;         // memory write start address
+	
+	// u4Byte 3
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+    u32 write_len:16;       // bit[15:0], the length to write
+    u32 rsvd2:16;           // bit[31:16]
+#else
+    u32 rsvd2:16;           // bit[31:16]
+    u32 write_len:16;       // bit[15:0], the length to write
+#endif
+	
+	// u4Byte 4
+	u32	rsvd3;
+
+	// u4Byte 5
+	u32	rsvd4;
+} TX_DESC_MW, *PTX_DESC_MW;
+
+// TX Desc for Memory Read command
+typedef struct _TX_DESC_MR{
+	// u4Byte 0
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+	u32	txpktsize:16;       // bit[15:0]
+	u32	offset:8;    		// bit[23:16], store the sizeof(TX_DESC)
+	u32	bus_agg_num:8;		// bit[31:24], the bus aggregation number
+#else
+    u32 bus_agg_num:8;      // bit[31:24], the bus aggregation number
+    u32 offset:8;           // bit[23:16], store the sizeof(TX_DESC)
+    u32 txpktsize:16;       // bit[15:0]
+#endif
+
+	// u4Byte 1
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+    u32 type:8;             // bit[7:0], the packet type
+    u32 rsvd0:24;
+#else
+    u32 rsvd0:24;
+    u32 type:8;             // bit[7:0], the packet type
+#endif
+
+	// u4Byte 2
+	u32	start_addr;         // memory write start address
+	
+	// u4Byte 3
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+    u32 read_len:16;        // bit[15:0], the length to read
+    u32 rsvd2:16;           // bit[31:16]
+#else
+    u32 rsvd2:16;           // bit[31:16]
+    u32 read_len:16;        // bit[15:0], the length to read
+#endif
+	
+	// u4Byte 4
+	u32	rsvd3;
+
+	// u4Byte 5
+	u32	rsvd4;
+} TX_DESC_MR, *PTX_DESC_MR;
+
+// TX Desc for Memory Set command
+typedef struct _TX_DESC_MS{
+	// u4Byte 0
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+	u32	txpktsize:16;       // bit[15:0]
+	u32	offset:8;    		// bit[23:16], store the sizeof(TX_DESC)
+	u32	bus_agg_num:8;		// bit[31:24], the bus aggregation number
+#else
+    u32 bus_agg_num:8;      // bit[31:24], the bus aggregation number
+    u32 offset:8;           // bit[23:16], store the sizeof(TX_DESC)
+    u32 txpktsize:16;       // bit[15:0]
+#endif
+
+	// u4Byte 1
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+    u32 type:8;             // bit[7:0], the packet type
+    u32 data:8;             // bit[8:15], the value to be written to the memory
+    u32 reply:1;            // bit[16], request to send a reply message
+    u32 rsvd0:15;
+#else
+    u32 rsvd0:15;
+    u32 reply:1;            // bit[16], request to send a reply message
+    u32 data:8;             // bit[8:15], the value to be written to the memory
+    u32 type:8;             // bit[7:0], the packet type
+#endif
+
+	// u4Byte 2
+	u32	start_addr;         // memory write start address
+	
+	// u4Byte 3
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+    u32 write_len:16;       // bit[15:0], the length to write
+    u32 rsvd2:16;           // bit[31:16]
+#else
+    u32 rsvd2:16;           // bit[31:16]
+    u32 write_len:16;       // bit[15:0], the length to write
+#endif
+	
+	// u4Byte 4
+	u32	rsvd3;
+
+	// u4Byte 5
+	u32	rsvd4;
+} TX_DESC_MS, *PTX_DESC_MS;
+
+// TX Desc for Jump to Start command
+typedef struct _TX_DESC_JS{
+	// u4Byte 0
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+	u32	txpktsize:16;       // bit[15:0]
+	u32	offset:8;    		// bit[23:16], store the sizeof(TX_DESC)
+	u32	bus_agg_num:8;		// bit[31:24], the bus aggregation number
+#else
+    u32 bus_agg_num:8;      // bit[31:24], the bus aggregation number
+    u32 offset:8;           // bit[23:16], store the sizeof(TX_DESC)
+    u32 txpktsize:16;       // bit[15:0]
+#endif
+
+	// u4Byte 1
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+    u32 type:8;             // bit[7:0], the packet type
+    u32 rsvd0:24;
+#else
+    u32 rsvd0:24;
+    u32 type:8;             // bit[7:0], the packet type
+#endif
+
+	// u4Byte 2
+	u32	start_fun;         // the pointer of the startup function 
+	
+	// u4Byte 3
+	u32	rsvd2;
+	
+	// u4Byte 4
+	u32	rsvd3;
+
+	// u4Byte 5
+	u32	rsvd4;
+} TX_DESC_JS, *PTX_DESC_JS;
+
+// For memory read command
+typedef struct _RX_DESC_MR{
+	// u4Byte 0
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+	u32	pkt_len:16;     // bit[15:0], the packet size
+	u32	offset:8;    	// bit[23:16], the offset from the packet start to the buf start, also means the size of RX Desc
+	u32	rsvd0:8;        // bit[31:24]
+#else
+	u32	rsvd0:8;        // bit[31:24]
+	u32	offset:8;    	// bit[23:16], the offset from the packet start to the buf start, also means the size of RX Desc
+	u32	pkt_len:16;     // bit[15:0], the packet size
+#endif
+
+	// u4Byte 1
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+	u32	type:8;         // bit[7:0], the type of this packet
+	u32	rsvd1:24;       // bit[31:8]
+#else
+    u32 rsvd1:24;       // bit[31:8]
+    u32 type:8;         // bit[7:0], the type of this packet
+#endif
+
+	// u4Byte 2
+	u32	start_addr;
+	
+	// u4Byte 3
+	u32	rsvd2;
+	
+	// u4Byte 4
+	u32	rsvd3;
+
+	// u4Byte 5
+	u32	rsvd4;
+} RX_DESC_MR, *PRX_DESC_MR;
+
+// For memory write reply command
+typedef struct _RX_DESC_MW{
+	// u4Byte 0
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+	u32	pkt_len:16;     // bit[15:0], the packet size
+	u32	offset:8;    	// bit[23:16], the offset from the packet start to the buf start, also means the size of RX Desc
+	u32	rsvd0:8;        // bit[31:24]
+#else
+	u32	rsvd0:8;        // bit[31:24]
+	u32	offset:8;    	// bit[23:16], the offset from the packet start to the buf start, also means the size of RX Desc
+	u32	pkt_len:16;     // bit[15:0], the packet size
+#endif
+
+	// u4Byte 1
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+	u32	type:8;         // bit[7:0], the type of this packet
+	u32	rsvd1:24;       // bit[31:8]
+#else
+    u32 rsvd1:24;       // bit[31:8]
+    u32 type:8;         // bit[7:0], the type of this packet
+#endif
+
+	// u4Byte 2
+	u32	start_addr;
+	
+	// u4Byte 3
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+    u32 write_len:16;   // bit[15:0], the type of this packet
+    u32 result:8;      // bit[23:16], the result of memory write command
+    u32 rsvd2:8;       // bit[31:24]
+#else
+    u32 rsvd2:8;       // bit[31:24]
+    u32 result:8;      // bit[23:16], the result of memory write command
+    u32 write_len:16;   // bit[15:0], the type of this packet
+#endif
+	
+	// u4Byte 4
+	u32	rsvd3;
+
+	// u4Byte 5
+	u32	rsvd4;
+} RX_DESC_MW, *PRX_DESC_MW;
+
+// For memory set reply command
+typedef struct _RX_DESC_MS{
+	// u4Byte 0
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+	u32	pkt_len:16;     // bit[15:0], the packet size
+	u32	offset:8;    	// bit[23:16], the offset from the packet start to the buf start, also means the size of RX Desc
+	u32	rsvd0:8;        // bit[31:24]
+#else
+	u32	rsvd0:8;        // bit[31:24]
+	u32	offset:8;    	// bit[23:16], the offset from the packet start to the buf start, also means the size of RX Desc
+	u32	pkt_len:16;     // bit[15:0], the packet size
+#endif
+
+	// u4Byte 1
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+	u32	type:8;         // bit[7:0], the type of this packet
+	u32	rsvd1:24;       // bit[31:8]
+#else
+    u32 rsvd1:24;       // bit[31:8]
+    u32 type:8;         // bit[7:0], the type of this packet
+#endif
+
+	// u4Byte 2
+	u32	start_addr;
+	
+	// u4Byte 3
+#if (SYSTEM_ENDIAN==PLATFORM_LITTLE_ENDIAN)
+    u32 write_len:16;   // bit[15:0], the type of this packet
+    u32 result:8;      // bit[23:16], the result of memory write command
+    u32 rsvd2:8;       // bit[31:24]
+#else
+    u32 rsvd2:8;       // bit[31:24]
+    u32 result:8;      // bit[23:16], the result of memory write command
+    u32 write_len:16;   // bit[15:0], the type of this packet
+#endif
+	
+	// u4Byte 4
+	u32	rsvd3;
+
+	// u4Byte 5
+	u32	rsvd4;
+} RX_DESC_MS, *PRX_DESC_MS;
+
 
 #endif

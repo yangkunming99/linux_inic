@@ -87,19 +87,11 @@ int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf)
 	int ret = _SUCCESS;
 	struct recv_priv *precvpriv = &padapter->recvpriv;
 	RXDESC_8195A rxdesc;
-//	AT_CMD_DESC atcmddesc;
-	//_irqL irqL;
-//	unsigned char attype[2];
-//	struct cmd_priv *pcmdpriv;
 	
 	_rtw_memcpy(&rxdesc, precvbuf->pdata, SIZE_RX_DESC_8195a);
 	//remove the rx header
 	recvbuf_pull(precvbuf, rxdesc.offset);
 
-//	_rtw_memcpy(&atcmddesc, precvbuf->pskb->data, SIZE_AT_CMD_DESC);
-	//remove the at cmd header
-//	skb_pull(precvbuf->pskb, atcmddesc.offset);
-	DBG_871X("packet type is : 0x%02x\n", rxdesc.type);
 	if(rxdesc.type == RX_PACKET_802_3)//data pkt 
 	{	
 		if ((padapter->bDriverStopped == _FALSE) && (padapter->bSurpriseRemoved == _FALSE))
@@ -129,18 +121,20 @@ int rtw_recv_entry(PADAPTER padapter, struct recv_buf *precvbuf)
 	}
 	else if(rxdesc.type == RX_C2H_CMD)//cmd pkt
 	{
-		//_rtw_memcpy(&attype, precvbuf->pskb->data, 2);
-extern void DumpForOneBytes(IN u8 * pData, IN u8 Len);
-		DumpForOneBytes(precvbuf->pdata, precvbuf->len);
-		DBG_871X("packet size is : %d && %d\n", precvbuf->len, rxdesc.pkt_len);
-		if(_rtw_memcmp(precvbuf->pdata, AT_CMD_wifi_linked, SIZE_AT_CMD_TYPE))
+		if(_rtw_memcmp(precvbuf->pdata, _FW_LINKED_, 2))
 		{
-			DBG_871X("%s: Ameba connected!\n", __FUNCTION__);
+			DBG_871X("network becomes connected!\n");
+#if 0 //use the address init by driver
+			rtw_os_indicate_disconnect(padapter->pnetdev);
+			_rtw_memcpy(padapter->pnetdev->dev_addr, precvbuf->pdata+2, ETH_ALEN);
+#endif
+			padapter->fw_status = 1;
 			rtw_os_indicate_connect(padapter->pnetdev);
 		}
-		if(_rtw_memcmp(precvbuf->pdata, AT_CMD_wifi_unlinked, SIZE_AT_CMD_TYPE))
+		if(_rtw_memcmp(precvbuf->pdata, _FW_UNLINKED_, 2))
 		{
-			DBG_871X("%s: Ameba disconnected!\n", __FUNCTION__);
+			DBG_871X("network becomes disconnected!\n");
+			padapter->fw_status = 0;
 			rtw_os_indicate_disconnect(padapter->pnetdev);
 		}
 		_rtw_skb_free(precvbuf->pskb);

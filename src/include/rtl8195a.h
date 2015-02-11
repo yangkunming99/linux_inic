@@ -7,9 +7,9 @@
 #define __devexit_p(func)   func
 #endif
 
-#define MODULENAME "iNIC_8195a"
-#define GPL_CLAIM "=== iNIC_8195a ===\n"
-#define RTL8195_VERSION "8195a"
+#define MODULENAME "iNIC_rtl8195a"
+#define GPL_CLAIM "=== iNIC_rtl8195a ===\n"
+#define RTL8195_VERSION "rtl8195a"
 
 enum _CHIP_TYPE {
 	NULL_CHIP_TYPE,	

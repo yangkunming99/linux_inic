@@ -36,6 +36,7 @@
 #include "8195_desc.h"
 #include "8195_sdio_reg.h"
 #include "rtl8195a.h"
+#include "rtl8195a_hal.h"
 #include "osdep_service.h"
 #include "osdep_intf.h"
 #include "sdio_hal.h"
@@ -249,6 +250,9 @@ static void sd_intf_start(PADAPTER padapter)
 
 	// hal dep
 	rtw_hal_enable_interrupt(padapter);
+#ifdef CONFIG_FWDL
+//    rtl8195a_FirmwareDownload(padapter,_FAIL);
+#endif    
 }
 
 static void sd_intf_stop(PADAPTER padapter)
@@ -268,6 +272,9 @@ _adapter *rtw_sdio_if1_init(struct dvobj_priv *dvobj, const struct sdio_device_i
 	struct net_device *pnetdev;
 	PADAPTER padapter = NULL;
 	u8 mac_addr[ETH_ALEN];
+	u16 fw_ready;
+	u32 i;
+  
 _func_enter_;
 	if ((padapter = (_adapter *)rtw_zvmalloc(sizeof(*padapter))) == NULL) {
 		DBG_871X("%s: vmalloc for padapter failed!\n", __FUNCTION__);
@@ -306,11 +313,37 @@ _func_enter_;
 	mac_addr[0] = 0x00;
 	mac_addr[1] = 0xe0;
 	mac_addr[2] = 0x4c;
-	mac_addr[3] = 0x87;
-	mac_addr[4] = 0x00;
+	mac_addr[3] = 0xB7;
+	mac_addr[4] = 0x23;
 	mac_addr[5] = 0x00;
 	_rtw_memcpy(pnetdev->dev_addr, mac_addr, ETH_ALEN);
-	
+#ifdef CONFIG_FWDL
+	// wait for the device firmware ready
+	for (i=0;i<100;i++) {
+		fw_ready = rtw_read16(padapter, SDIO_REG_HCPWM2);
+		if (fw_ready & SDIO_INIT_DONE) {
+			break;
+		}
+		rtw_msleep_os(10);
+	}
+	if (i==100) {
+		DBG_871X("%s: Wait Device Firmware Ready Timeout!!SDIO_REG_HCPWM2 @ 0x%04x\n", __FUNCTION__, fw_ready);
+		goto free_adapter;
+	}
+#else
+	// wait for the device firmware ready
+	for (i=0;i<100;i++) {
+		fw_ready = rtw_read8(padapter, SDIO_REG_CPU_IND);
+		if (fw_ready & SDIO_SYSTEM_TRX_RDY_IND) {
+			break;
+		}
+		rtw_msleep_os(10);
+	}
+	if (i==100) {
+		DBG_871X("%s: Wait Device Firmware Ready Timeout!!SDIO_REG_HCPWM2 @ 0x%04x\n", __FUNCTION__, fw_ready);
+		goto free_adapter;
+	}
+#endif
 	rtw_hal_disable_interrupt(padapter);
 	DBG_871X("bDriverStopped:%d, bSurpriseRemoved:%d, bup:%d\n"
 		,padapter->bDriverStopped
@@ -335,6 +368,7 @@ static void rtw_sdio_if1_deinit(_adapter *if1)
 {
 	struct net_device *pnetdev = if1->pnetdev;
 _func_enter_;
+	rtw_dev_unload(if1);
 	rtw_free_drv_sw(if1);
 	if(pnetdev)
 		rtw_free_netdev(pnetdev);
@@ -354,6 +388,10 @@ static int __devinit rtl8195a_init_one(struct sdio_func *func, const struct sdio
 		goto exit;
 	}
 	
+    // for 8195a boot from flash case, wait 8195a firmware be loaded and get ready
+    // this delay can be removed for the SDIO Boot ROM case
+//    msleep(1000);   
+    
 	// 2. init SDIO interface 
 	if ((padapter = rtw_sdio_if1_init(dvobj, id)) == NULL) {
 		DBG_871X("rtw_init_adapter Failed!\n");
@@ -387,7 +425,6 @@ exit:
 static void __devexit rtl8195a_remove_one(struct sdio_func *func)
 
 {
-	int err;
 	PADAPTER padapter;
 	struct dvobj_priv *dvobj = sdio_get_drvdata(func);
 	padapter = dvobj->if1;
@@ -395,16 +432,20 @@ static void __devexit rtl8195a_remove_one(struct sdio_func *func)
 	if(padapter)
 	{	
 		rtw_drv_unregister_netdev(padapter);
-		/* test surprise remove */
-		sdio_claim_host(func);
-		sdio_readb(func, 0, &err);
-		sdio_release_host(func);
-		if (err == -ENOMEDIUM) {
-			DBG_871X(KERN_NOTICE "%s: device had been removed!\n", __func__);
+		if (padapter->bSurpriseRemoved == _FALSE) {
+			int err;
+
+			/* test surprise remove */
+			sdio_claim_host(func);
+			sdio_readb(func, 0, &err);
+			sdio_release_host(func);
+			if (err == -ENOMEDIUM) {
+				padapter->bSurpriseRemoved = _TRUE;
+				DBG_871X(KERN_NOTICE "%s: device had been removed!\n", __func__);
+			}
 		}
 		rtw_sdio_if1_deinit(padapter);
 	}
-
 	sdio_dvobj_deinit(func);
 }
 

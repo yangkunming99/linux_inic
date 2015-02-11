@@ -130,6 +130,7 @@ struct _ADAPTER
 	_lock lock;
 	s32	bDriverStopped;
 	s32	bSurpriseRemoved;
+	u8 fw_status;
 	int net_closed;	
 	u8 netif_up;
 #ifdef PLATFORM_LINUX
@@ -143,6 +144,10 @@ struct _ADAPTER
 	u16	FirmwareVersionRev;
 	u16	FirmwareSubVersion;
 	u16	FirmwareSignature;
+
+	u32	FirmwareStartAddr;
+	u32	FirmwareSize;
+	u32	FirmwareEntryFun;
 
 	struct dvobj_priv *dvobj;
 	//For xmit priv
@@ -192,5 +197,7 @@ unsigned int datatype: 1; // only one bit used, 0: data frame 1: management fram
 #define AT_CMD_wifi_linked		"LK"
 #define AT_CMD_wifi_unlinked	"UL"
 
+#define _FW_UNLINKED_			"UL"
+#define _FW_LINKED_			"LK"
 #endif
 

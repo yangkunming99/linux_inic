@@ -22,18 +22,21 @@ inline void rtw_sdio_set_irq_thd(struct dvobj_priv *dvobj, _thread_hdl_ thd_hdl)
  *	0		Success
  *	others	Fail
  */
-s32 _sd_cmd52_read(struct sdio_func *func, u32 addr, u32 cnt, u8 *pdata)
+s32 _sd_cmd52_read(PADAPTER padapter, u32 addr, u32 cnt, u8 *pdata)
 {
 //	PADAPTER padapter;
 //	struct dvobj_priv *psdiodev;
 //	PSDIO_DATA psdio;
 
 	int err=0, i;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 	struct sdio_func *pfunc;
-
 _func_enter_;
-
-	pfunc = func;
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return err;
+	}
+	pfunc = psdio->func;
 //	printk("%s(): block size is %d\n", __func__, pfunc->cur_blksize);
 	for (i = 0; i < cnt; i++) {
 		pdata[i] = sdio_readb(pfunc, addr+i, &err);
@@ -61,14 +64,19 @@ s32 sd_cmd52_read(PADAPTER padapter, u32 addr, u32 cnt, u8 *pdata)
 	bool claim_needed;	
 	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
-	
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return err;
+	}	
 	func = psdio->func;
 	claim_needed = rtw_sdio_claim_host_needed(func);
 
 	if (claim_needed)
 		sdio_claim_host(func);
-	err = _sd_cmd52_read(func, addr, cnt, pdata);
+	err = _sd_cmd52_read(padapter, addr, cnt, pdata);
+    if (err) {
 	printk("%s(): err from _sd_cmd52_read is : %d\n", __func__, err);
+    }
 	if (claim_needed)
 		sdio_release_host(func);
 
@@ -90,6 +98,11 @@ s32 _sd_cmd52_write(PADAPTER padapter, u32 addr, u32 cnt, u8 *pdata)
 	struct sdio_func *func;
 
 _func_enter_;
+
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return err;
+	}
 	
 	func = psdio->func;
 
@@ -118,6 +131,12 @@ s32 sd_cmd52_write(PADAPTER padapter, u32 addr, u32 cnt, u8 *pdata)
 	bool claim_needed;
 	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
+
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return err;
+	}
+
 	func = psdio->func;
 	claim_needed = rtw_sdio_claim_host_needed(func);
 
@@ -137,6 +156,11 @@ u8 _sd_read8(PADAPTER padapter, u32 addr, s32 *err)
 	struct sdio_func *func;
 	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
+
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return v;
+	}
 	
 	func = psdio->func;
 
@@ -158,6 +182,11 @@ u8 sd_read8(PADAPTER padapter, u32 addr, s32 *err)
 	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return v;
+	}
+	
 	func = psdio->func;
 	claim_needed = rtw_sdio_claim_host_needed(func);
 
@@ -183,6 +212,11 @@ u8 sd_f0_read8(PADAPTER padapter,u32 addr, s32 *err)
 	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return v;
+	}
+
 	func = psdio->func;
 	claim_needed = rtw_sdio_claim_host_needed(func);
 
@@ -207,6 +241,11 @@ u16 sd_read16(PADAPTER padapter, u32 addr, s32 *err)
 	bool claim_needed;
 	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
+
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return v;
+	}
 	
 	func = psdio->func;
 	claim_needed = rtw_sdio_claim_host_needed(func);
@@ -232,6 +271,11 @@ u32 sd_read32(PADAPTER padapter, u32 addr, s32 *err)
 	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return v;
+	}
+	
 	func = psdio->func;
 	claim_needed = rtw_sdio_claim_host_needed(func);
 
@@ -288,6 +332,11 @@ void sd_write8(PADAPTER padapter, u32 addr, u8 v, s32 *err)
 	bool claim_needed;
 	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
+
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return ;
+	}
 	
 	func = psdio->func;
 	claim_needed = rtw_sdio_claim_host_needed(func);
@@ -309,6 +358,11 @@ void sd_write16(PADAPTER padapter, u32 addr, u16 v, s32 *err)
 	bool claim_needed;
 	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
+
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return ;
+	}
 	
 	func = psdio->func;
 	claim_needed = rtw_sdio_claim_host_needed(func);
@@ -330,6 +384,11 @@ void sd_write32(PADAPTER padapter, u32 addr, u32 v, s32 *err)
 	bool claim_needed;
 	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
+
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return ;
+	}
 	
 	func = psdio->func;
 	claim_needed = rtw_sdio_claim_host_needed(func);
@@ -393,15 +452,21 @@ _func_exit_;
  *	0		Success
  *	others	Fail
  */
-s32 _sd_read(struct sdio_func *func, u32 addr, u32 cnt, void *pdata)
+s32 _sd_read(PADAPTER padapter, u32 addr, u32 cnt, void *pdata)
 {
 	
 	int err= -EPERM;
 	struct sdio_func *pfunc;
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 	
 _func_enter_;
-		
-	pfunc = func;
+
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return err;
+	}
+	
+	pfunc = psdio->func;
 
 	if (unlikely((cnt==1) || (cnt==2)))
 	{
@@ -450,12 +515,18 @@ s32 sd_read(PADAPTER padapter, u32 addr, u32 cnt, void *pdata)
 	s32 err= -EPERM;
 	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
+
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return err;
+	}
+	
 	func = psdio->func;
 	claim_needed = rtw_sdio_claim_host_needed(func);
 
 	if (claim_needed)
 		sdio_claim_host(func);
-	err = _sd_read(func, addr, cnt, pdata);
+	err = _sd_read(padapter, addr, cnt, pdata);
 	if (claim_needed)
 		sdio_release_host(func);
 _func_exit_;
@@ -478,16 +549,21 @@ _func_exit_;
  *	0		Success
  *	others	Fail
  */
-s32 _sd_write(struct sdio_func *func, u32 addr, u32 cnt, void *pdata)
+s32 _sd_write(PADAPTER padapter, u32 addr, u32 cnt, void *pdata)
 {
 	
 	struct sdio_func *pfunc;
 	u32 size;
 	s32 err=-EPERM;
-
+	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
-	
-	pfunc = func;
+
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return err;
+	}	
+
+	pfunc = psdio->func;
 //	size = sdio_align_size(func, cnt);
 
 	if (unlikely((cnt==1) || (cnt==2)))
@@ -541,12 +617,17 @@ s32 sd_write(PADAPTER padapter, u32 addr, u32 cnt, void *pdata)
 	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
 _func_enter_;
 
+	if(padapter->bSurpriseRemoved){
+		//DBG_871X(" %s (padapter->bSurpriseRemoved ||adapter->pwrctrlpriv.pnp_bstop_trx)!!!\n",__FUNCTION__);
+		return err;
+	}
+	
 	func = psdio->func;
 	claim_needed = rtw_sdio_claim_host_needed(func);
 
 	if (claim_needed)
 		sdio_claim_host(func);
-	err = _sd_write(func, addr, cnt, pdata);
+	err = _sd_write(padapter, addr, cnt, pdata);
 	if (claim_needed)
 		sdio_release_host(func);
 _func_exit_;

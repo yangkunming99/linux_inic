@@ -250,7 +250,7 @@ u32 sdio_read_port(
 	
 //	cnt = sdio_align_size(cnt);
  	//printk("%s(): cnt is %d\n", __func__, cnt);
-	err = _sd_read(psdio->func, addr, cnt, mem);
+	err = _sd_read(padapter, addr, cnt, mem);
 	//err = sd_read(padapter, addr, cnt, mem);
 	
 	if (err) return _FAIL;
@@ -445,7 +445,7 @@ s32 _sdio_local_read(
 	s32 err;
 	u8 *ptmpbuf;
 	u32 n;
-	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
+
 	HalSdioGetCmdAddr8195ASdio(padapter, SDIO_LOCAL_DEVICE_ID, addr, &addr);
 
 #if 0
@@ -459,7 +459,7 @@ s32 _sdio_local_read(
 	if(!ptmpbuf)
 		return (-1);
 	
-	err = _sd_read(psdio->func, addr, n, ptmpbuf);
+	err = _sd_read(padapter, addr, n, ptmpbuf);
 	
 	if (!err)
 		_rtw_memcpy(pbuf, ptmpbuf, cnt);
@@ -514,7 +514,7 @@ s32 _sdio_local_write(
 
 	s32 err;
 	u8 *ptmpbuf;
-	PSDIO_DATA psdio= &padapter->dvobj->intf_data;
+
 	if(addr & 0x3)
 		DBG_871X("%s, address must be 4 bytes alignment\n", __FUNCTION__);
 
@@ -529,7 +529,7 @@ s32 _sdio_local_write(
 
 	_rtw_memcpy(ptmpbuf, pbuf, cnt);
 
-	err = _sd_write(psdio->func, addr, cnt, ptmpbuf);
+	err = _sd_write(padapter, addr, cnt, ptmpbuf);
 	
 	if (ptmpbuf)
 		rtw_mfree(ptmpbuf, cnt);

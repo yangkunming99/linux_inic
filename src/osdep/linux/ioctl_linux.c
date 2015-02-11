@@ -5,6 +5,7 @@
 #include "rtw_cmd.h"
 #include "hal_intf.h"
 #include "8195_desc.h"
+#define _IOCTL_LINUX_C_
 //define some private IOCTL options which are not in wireless.h
 #define RTL_IOCTL_ATCMD				(SIOCDEVPRIVATE+1)
 static int rtw_wx_atcmd(PADAPTER padapter, struct net_device *dev, struct iw_point *p)

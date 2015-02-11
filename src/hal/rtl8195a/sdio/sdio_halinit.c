@@ -31,7 +31,7 @@
 
 static u32 rtl8195as_hal_init(PADAPTER padapter){
 	u8 res = _SUCCESS;
-	u8 value8;
+//	u8 value8;
 	//
 	// Configure SDIO TxRx Control to enable Rx DMA timer masking.
 	// 2010.02.24.
