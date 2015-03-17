@@ -1,2 +1,2 @@
-#Github project
-#username = yangkunming99
+#src/: ameba NIC driver source
+#TestApp/: control api for ameba NIC

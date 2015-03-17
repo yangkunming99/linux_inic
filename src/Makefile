@@ -61,8 +61,6 @@ ifeq ($(CONFIG_RTL8195A),y)
 $(shell cp $(TopDIR)/autoconf_rtl8195a_$(HCI_NAME)_linux.h $(TopDIR)/include/autoconf.h)
 endif
 
-ifneq ($(KERNELRELEASE),)
-
 rtk_core :=	core/rtw_cmd.o \
 		core/rtw_io.o \
 		core/rtw_recv.o \
@@ -74,8 +72,6 @@ $(MODULE_NAME)-y += $(_OS_INTFS_FILES)
 $(MODULE_NAME)-y += $(_HAL_INTFS_FILES)
 
 obj-m := $(MODULE_NAME).o
-
-else
 
 BASEDIR := /lib/modules/$(shell uname -r)
 KERNELDIR ?= $(BASEDIR)/build
@@ -100,5 +96,3 @@ clean:
 .PHONY:install
 install:
 	$(MAKE) -C $(KERNELDIR) SUBDIRS=$(PWD) INSTALL_MOD_DIR=$(RTKDIR) modules_install
-
-endif
