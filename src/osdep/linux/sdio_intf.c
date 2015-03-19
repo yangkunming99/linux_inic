@@ -52,12 +52,6 @@ MODULE_DESCRIPTION("RealTek RTL-8195a iNIC");
 MODULE_LICENSE("GPL");
 MODULE_VERSION(RTL8195_VERSION);
 
-
-#ifdef GET_SYS_TIME
-#include <linux/time.h>
-struct timeval time_out;
-struct timeval time_back;
-#endif
 static u32 sdio_init(struct dvobj_priv *dvobj)
 {
 	PSDIO_DATA psdio_data;
@@ -69,7 +63,7 @@ _func_enter_;
 	psdio_data = &dvobj->intf_data;
 	func = psdio_data->func;
 
-	//3 1. init SDIO bus
+	// 1. init SDIO bus
 	sdio_claim_host(func);
 
 	err = sdio_enable_func(func);
@@ -195,12 +189,10 @@ int sdio_alloc_irq(struct dvobj_priv *dvobj)
 	err = sdio_claim_irq(func, &sd_sync_int_hdl);
 	if (err)
 	{
-		//dvobj->drv_dbg.dbg_sdio_alloc_irq_error_cnt++;
 		printk(KERN_CRIT "%s: sdio_claim_irq FAIL(%d)!\n", __func__, err);
 	}
 	else
 	{
-		//dvobj->drv_dbg.dbg_sdio_alloc_irq_cnt++;
 		dvobj->irq_alloc = 1;
 	}
 
@@ -224,11 +216,8 @@ void sdio_free_irq(struct dvobj_priv *dvobj)
             err = sdio_release_irq(func);
             if (err)
             {
-				//dvobj->drv_dbg.dbg_sdio_free_irq_error_cnt++;
 				DBG_871X("%s: sdio_release_irq FAIL(%d)!\n", __func__, err);
             }
-            //else
-            	//dvobj->drv_dbg.dbg_sdio_free_irq_cnt++;
             sdio_release_host(func);
         }
         dvobj->irq_alloc = 0;
@@ -249,10 +238,7 @@ static void sd_intf_start(PADAPTER padapter)
 	}
 
 	// hal dep
-	rtw_hal_enable_interrupt(padapter);
-#ifdef CONFIG_FWDL
-//    rtl8195a_FirmwareDownload(padapter,_FAIL);
-#endif    
+	rtw_hal_enable_interrupt(padapter);   
 }
 
 static void sd_intf_stop(PADAPTER padapter)
@@ -283,17 +269,17 @@ _func_enter_;
 	padapter->dvobj = dvobj;
 	dvobj->if1 = padapter;
 	padapter->interface_type = RTW_SDIO;
-	//3 1. init network device data
+	// 1. init network device data
 	pnetdev = rtw_init_netdev(padapter);
 	if (!pnetdev)
 		goto free_adapter;
 	SET_NETDEV_DEV(pnetdev, &dvobj->intf_data.func->dev);
 	padapter = rtw_netdev_priv(pnetdev);
 
-	//3 3. init driver special setting, interface, OS and hardware relative
+	// 2. init driver special setting, interface, OS and hardware relative
 	rtw_set_hal_ops(padapter);
 	
-	//3 5. initialize Chip version
+	// 3. initialize Chip version
 	padapter->intf_start = &sd_intf_start;
 	padapter->intf_stop = &sd_intf_stop;
 
@@ -304,12 +290,12 @@ _func_enter_;
 	
 	sdio_set_intf_ops(padapter, &padapter->io_ops);
 
-	//4 4. init driver common data
+	// 4. init driver common data
 	if (rtw_init_drv_sw(padapter) == _FAIL) {
 		goto free_adapter;
 	}
 
-	//5 5. get MAC address
+	// 5. get MAC address
 	mac_addr[0] = 0x00;
 	mac_addr[1] = 0xe0;
 	mac_addr[2] = 0x4c;
@@ -318,7 +304,7 @@ _func_enter_;
 	mac_addr[5] = 0x00;
 	_rtw_memcpy(pnetdev->dev_addr, mac_addr, ETH_ALEN);
 #ifdef CONFIG_FWDL
-	// wait for the device firmware ready
+	// wait for the device boot code ready
 	for (i=0;i<100;i++) {
 		fw_ready = rtw_read16(padapter, SDIO_REG_HCPWM2);
 		if (fw_ready & SDIO_INIT_DONE) {
@@ -340,7 +326,7 @@ _func_enter_;
 		rtw_msleep_os(10);
 	}
 	if (i==100) {
-		DBG_871X("%s: Wait Device Firmware Ready Timeout!!SDIO_REG_HCPWM2 @ 0x%04x\n", __FUNCTION__, fw_ready);
+		DBG_871X("%s: Wait Device Firmware Ready Timeout!!SDIO_REG_CPU_IND @ 0x%04x\n", __FUNCTION__, fw_ready);
 		goto free_adapter;
 	}
 #endif
@@ -383,26 +369,23 @@ static int __devinit rtl8195a_init_one(struct sdio_func *func, const struct sdio
 	DBG_871X("%s():++\n",__FUNCTION__);
 	DBG_871X("+rtw_drv_init: vendor=0x%04x device=0x%04x class=0x%02x\n", func->vendor, func->device, func->class);
 	
-	
+	// 1. init sdio bus
 	if ((dvobj = sdio_dvobj_init(func)) == NULL) {
 		goto exit;
 	}
 	
-    // for 8195a boot from flash case, wait 8195a firmware be loaded and get ready
-    // this delay can be removed for the SDIO Boot ROM case
-//    msleep(1000);   
-    
-	// 2. init SDIO interface 
+  	// 2. init device interface 
 	if ((padapter = rtw_sdio_if1_init(dvobj, id)) == NULL) {
 		DBG_871X("rtw_init_adapter Failed!\n");
 		goto free_dvobj;
 	}
 	
-	// 2.dev_alloc_name && register_netdev
+	// 3. dev_alloc_name && register_netdev
 	if((rtw_drv_register_netdev(padapter)) != _SUCCESS) {
 		goto free_adapter;
 	}	
 
+	// 4. register for irq hander
 	if (sdio_alloc_irq(dvobj) != _SUCCESS)
 	{
 		goto free_adapter;

@@ -40,6 +40,15 @@
 #define SDIO_REG_HRPWM						0x80 // 1byte, driver to FW, host domain, sync to CRPWM
 #define SDIO_REG_HRPWM2						0x82 // 2bytes, driver to FW, host domain, sync to CRPWM2
 #define SDIO_REG_CPU_IND						0x87 // 1 bytes, firmware indication to host
+#define SDIO_REG_CMD_IN2RSP_TIME			0x88 // 2 bytes, command IN to response OUT time
+#define SDIO_REG_ERR_FLAG						0xC0 // 1 byte, ERR FLAG for SDIO DEBUG
+#define SDIO_REG_CMD_ERRCNT					0xC1 // 1 byte, the number of CRC error of SDIO command
+#define SDIO_REG_DATA_ERRCNT					0xC2 // 1 byte, the number of CRC error of SDIO data block
+#define SDIO_REG_CRC_ERR_INDEX				0xC3 // 1 byte, indicate there is crc error on D3-D0
+#define SDIO_REG_AVAI_BD_NUM_TH_L			0xD0 // 4 bytes, low threshold for TXBD Number
+#define SDIO_REG_AVAI_BD_NUM_TH_H			0xD4 // 4 bytes, high threshold for TXBD Number
+#define SDIO_REG_RX_AGG_CFG					0xD8 // 2 bytes, SDIO bus Rx Aggregation config register
+
 
 // SDIO Host Interrupt Service Routine
 #define SDIO_HISR_RX_REQUEST					(BIT0)

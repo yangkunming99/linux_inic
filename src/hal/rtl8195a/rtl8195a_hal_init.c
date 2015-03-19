@@ -125,6 +125,7 @@ exit:
 	return ret;
 }
 #endif
+
 #ifdef CONFIG_USB_HCI
 static int
 _FwPageWrite(
@@ -201,6 +202,8 @@ static s32 check_firmware_status(_adapter *padapter){
 #endif
 	return ret;
 }
+
+#if 1
 extern u8 g_fwdl_chksum_fail;
 extern u8 g_fwdl_wintint_rdy_fail;
 static s32 polling_fwdl_chksum(_adapter *adapter, u32 min_cnt, u32 timeout_ms)
@@ -238,6 +241,9 @@ static s32 polling_fwdl_chksum(_adapter *adapter, u32 min_cnt, u32 timeout_ms)
 
 	return ret;
 }
+#endif
+
+#ifdef CONFIG_SDIO_HCI
 static s32 _FWFreeToGo(_adapter *adapter, u32 min_cnt, u32 timeout_ms)
 {
 	s32 ret = _FAIL;
@@ -290,7 +296,7 @@ static s32 _FWFreeToGo(_adapter *adapter, u32 min_cnt, u32 timeout_ms)
 	 for (i=0;i<100;i++) {
 		if(check_firmware_status(adapter) == _SUCCESS)
 			break;
-		rtw_msleep_os(10);
+		rtw_msleep_os(20);
 	}
 	if (i==100) {
 		DBG_871X("%s: Wait Firmware Start Timeout!!\n", __FUNCTION__);
@@ -301,39 +307,16 @@ static s32 _FWFreeToGo(_adapter *adapter, u32 min_cnt, u32 timeout_ms)
 	}
 	return ret;
 }
-
-static VOID
-_FWDownloadEnable_8195A(
-	IN	PADAPTER		padapter,
-	IN	BOOLEAN			enable
-	)
-{
-#if 0
-	u8	tmp;
-	if(enable)
-	{
-
-		// MCU firmware download enable.
-		tmp = rtw_read8(padapter, REG_MCUFWDL);
-		rtw_write8(padapter, REG_MCUFWDL, tmp|0x01);
-
-		// 8051 reset
-		tmp = rtw_read8(padapter, REG_MCUFWDL+2);
-		rtw_write8(padapter, REG_MCUFWDL+2, tmp&0xf7);
-
-	}
-	else
-	{		
-		
-		// MCU firmware download disable.
-		tmp = rtw_read8(padapter, REG_MCUFWDL);
-		rtw_write8(padapter, REG_MCUFWDL, tmp&0xfe);
-
-		// Reserved for fw extension.
-		rtw_write8(padapter, REG_MCUFWDL+1, 0x00);
-	}
 #endif
+
+#ifdef CONFIG_USB_HCI
+static s32 _FWFreeToGo(_adapter *adapter, u32 min_cnt, u32 timeout_ms){
+	//todo: indicate firmware download done
+	s32 ret = _SUCCESS;
+	return ret;
 }
+#endif
+
 
 #ifdef CONFIG_FILE_FWIMG
 extern char *rtw_fw_file_path;
@@ -455,28 +438,13 @@ s32 rtl8195a_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw)
 	DBG_871X("%s: fw_startaddr=0x%08x fw_size=%d fw_entry=0x%08x\n",
 	      __FUNCTION__, padapter->FirmwareStartAddr, padapter->FirmwareSize, padapter->FirmwareEntryFun);
 
-#if 0		
-	if (IS_FW_HEADER_EXIST_95A(pFwHdr))
-	{
-		// Shift 32 bytes for FW header
-		pFirmwareBuf = pFirmwareBuf + 32;
-		FirmwareLen = FirmwareLen - 32;
-	}
-#else    
+   
     // skip first 16 bytes
     pFirmwareBuf = pFirmwareBuf + 16;
     FirmwareLen = FirmwareLen - 16;
-#endif    
-/*
-	// Suggested by Filen. If 8051 is running in RAM code, driver should inform Fw to reset by itself,
-	// or it will cause download Fw fail. 2010.02.01. by tynli.
-	if (rtw_read8(padapter, REG_MCUFWDL) & RAM_DL_SEL) //8051 RAM code
-	{
-		rtw_write8(padapter, REG_MCUFWDL, 0x00);
-		_8051Reset88E(padapter);		
-	}
-*/
-	_FWDownloadEnable_8195A(padapter, _TRUE);
+ 
+
+	//_FWDownloadEnable_8195A(padapter, _TRUE);
 	fwdl_start_time = rtw_get_current_time();
 	while(!padapter->bDriverStopped && !padapter->bSurpriseRemoved
 			&& (write_fw++ < 3 || rtw_get_passing_time_ms(fwdl_start_time) < 500))
@@ -484,12 +452,13 @@ s32 rtl8195a_FirmwareDownload(PADAPTER padapter, BOOLEAN  bUsedWoWLANFw)
 		rtStatus = _WriteFW(padapter, pFirmwareBuf, FirmwareLen);
 		if (rtStatus != _SUCCESS)
 			continue;
-
+#if 1
 		rtStatus = polling_fwdl_chksum(padapter, 5, 50);
 		if (rtStatus == _SUCCESS)
 			break;
+#endif
 	}
-	_FWDownloadEnable_8195A(padapter, _FALSE);
+	//_FWDownloadEnable_8195A(padapter, _FALSE);
 	if(_SUCCESS != rtStatus)
 		goto fwdl_stat;
 

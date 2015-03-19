@@ -132,16 +132,10 @@ int _rtw_xmit_entry(_pkt *pkt, _nic_hdl pnetdev)
 	struct xmit_priv *pxmitpriv;
 	//_irqL irqL;
 	PTXDESC_8195A ptxdesc;
-//	PAT_CMD_DESC patcmd;
-//	_pkt *pkt = pxmitbuf->pkt;	
+
 _func_enter_;
 	padapter = (PADAPTER)rtw_netdev_priv(pnetdev);
 	pxmitpriv = &padapter->xmitpriv;
-#ifdef GET_SYS_TIME
-#include <linux/time.h>
-extern struct timeval time_out;
-do_gettimeofday(&time_out);
-#endif
 
 	//dequeue free xmitbuf
 	pxmitbuf = rtw_alloc_xmitbuf(padapter);

@@ -29,6 +29,47 @@
 #include "rtl8195a_hal.h"
 #include "8195_sdio_reg.h"
 
+
+static void HalRxAggr8195ASdio(PADAPTER padapter)
+{
+	u8	valueTimeout;
+	u8	valueBDCount;
+
+	// 2010.04.27 hpfan
+	// Adjust RxAggrTimeout to close to zero disable RxAggr, suggested by designer
+	// Timeout value is calculated by 34 / (2^n)
+	valueTimeout = 0x0f;
+	valueBDCount = 0x01;
+
+	rtw_write8(padapter, SDIO_REG_RX_AGG_CFG+1, valueTimeout | 0x80);
+	rtw_write8(padapter, SDIO_REG_RX_AGG_CFG, valueBDCount);
+}
+
+void _initSdioAggregationSetting(PADAPTER padapter)
+{
+
+	// Rx aggregation setting
+	HalRxAggr8195ASdio(padapter);
+
+}
+
+
+void _InitInterrupt(PADAPTER padapter)
+{
+
+	//HISR write one to clear
+	rtw_write32(padapter, SDIO_REG_HISR, 0xFFFFFFFF);
+	
+	// HIMR - turn all off
+	rtw_write32(padapter, SDIO_REG_HIMR, 0);
+
+	//
+	// Initialize and enable SDIO Host Interrupt.
+	//
+	InitInterrupt8195ASdio(padapter);
+	
+}
+
 static u32 rtl8195as_hal_init(PADAPTER padapter){
 	u8 res = _SUCCESS;
 //	u8 value8;
@@ -44,8 +85,8 @@ static u32 rtl8195as_hal_init(PADAPTER padapter){
 #ifdef CONFIG_FWDL
 	res = rtl8195a_FirmwareDownload(padapter,_FAIL);
 #endif
-	
-	InitInterrupt8195ASdio(padapter);
+	_initSdioAggregationSetting(padapter);
+	_InitInterrupt(padapter);
 	return res;
 }
 
